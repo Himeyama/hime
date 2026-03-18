@@ -4,9 +4,6 @@ import * as os from "os";
 import { AppSettings } from "../types/messages";
 import { DEFAULT_MODELS } from "../types/provider";
 
-const BASE_DIR = path.join(os.homedir(), ".hime");
-const SETTINGS_FILE = path.join(BASE_DIR, "settings.json");
-
 function createDefaultSettings(): AppSettings {
   return {
     defaultProvider: "anthropic",
@@ -33,19 +30,27 @@ function createDefaultSettings(): AppSettings {
 }
 
 export class SettingsStorage {
+  private get baseDir(): string {
+    return path.join(os.homedir(), ".hime");
+  }
+
+  private get settingsFile(): string {
+    return path.join(this.baseDir, "settings.json");
+  }
+
   async initialize(): Promise<void> {
-    await fs.mkdir(BASE_DIR, { recursive: true });
+    await fs.mkdir(this.baseDir, { recursive: true });
     try {
-      await fs.access(SETTINGS_FILE);
+      await fs.access(this.settingsFile);
     } catch {
       const defaults = createDefaultSettings();
-      await fs.writeFile(SETTINGS_FILE, JSON.stringify(defaults, null, 2), "utf-8");
+      await fs.writeFile(this.settingsFile, JSON.stringify(defaults, null, 2), "utf-8");
     }
   }
 
   async load(): Promise<AppSettings> {
     try {
-      const data = await fs.readFile(SETTINGS_FILE, "utf-8");
+      const data = await fs.readFile(this.settingsFile, "utf-8");
       const settings = JSON.parse(data) as AppSettings;
       // Ensure mcpServers exists
       if (!settings.mcpServers) {
@@ -60,8 +65,8 @@ export class SettingsStorage {
   }
 
   async save(settings: AppSettings): Promise<void> {
-    await fs.mkdir(BASE_DIR, { recursive: true });
-    await fs.writeFile(SETTINGS_FILE, JSON.stringify(settings, null, 2), "utf-8");
+    await fs.mkdir(this.baseDir, { recursive: true });
+    await fs.writeFile(this.settingsFile, JSON.stringify(settings, null, 2), "utf-8");
   }
 
   async update(partial: Partial<AppSettings>): Promise<AppSettings> {
