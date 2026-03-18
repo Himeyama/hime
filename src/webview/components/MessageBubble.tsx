@@ -21,15 +21,15 @@ export function MessageBubble({ message, isStreaming, streamingContent }: Messag
   }
 
   return (
-    <div className={`animate-fade-in ${isUser ? "flex justify-end" : ""}`}>
+    <div className={`flex flex-col animate-fade-in ${isUser ? "items-end" : "items-start"}`}>
       <div
-        className={`text-[13px] leading-relaxed ${
+        className={`text-[13px] leading-relaxed relative ${
           isUser
-            ? "bg-vsc-accent/10 text-vsc-fg rounded-xl px-3.5 py-2.5 max-w-[85%] border border-vsc-accent/20"
-            : "w-full"
+            ? "bg-vsc-accent text-vsc-accent-fg rounded-2xl rounded-tr-none px-4 py-2.5 max-w-[90%] shadow-sm"
+            : "w-full bg-vsc-bg-secondary/30 rounded-2xl rounded-tl-none px-4 py-3 border border-vsc-border/30"
         }`}
       >
-        <div className="markdown-body">
+        <div className={`markdown-body ${isUser ? "text-vsc-accent-fg" : ""}`}>
           <ReactMarkdown
             remarkPlugins={[remarkGfm]}
             components={{
@@ -80,7 +80,7 @@ export function MessageBubble({ message, isStreaming, streamingContent }: Messag
 
         {isStreaming && <span className="animate-blink text-vsc-accent ml-0.5">▊</span>}
 
-        {message.provider && (
+        {message.provider && !isUser && (
           <div className="text-[10px] text-vsc-fg-secondary/50 mt-2 text-right select-none">
             {message.provider}{message.model ? ` · ${message.model}` : ""}
           </div>

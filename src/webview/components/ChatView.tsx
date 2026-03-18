@@ -73,10 +73,7 @@ export function ChatView({
 
       {/* ドキュメント読み込み通知 */}
       {loadedContextFiles && loadedContextFiles.length > 0 && (
-        <div className="flex items-center gap-1.5 px-3 py-1.5 text-[11px] text-vsc-fg-secondary border-b border-vsc-border/30 bg-vsc-bg-hover/30 animate-fade-in">
-          <svg width="12" height="12" viewBox="0 0 16 16" fill="currentColor" className="flex-shrink-0 opacity-60">
-            <path d="M14 4.5V14a1 1 0 0 1-1 1H3a1 1 0 0 1-1-1V2a1 1 0 0 1 1-1h6.5L14 4.5zm-3 0A1.5 1.5 0 0 1 9.5 3V1H3a.5.5 0 0 0-.5.5v13a.5.5 0 0 0 .5.5h10a.5.5 0 0 0 .5-.5V4.5H11z" />
-          </svg>
+        <div className="px-3 py-1.5 text-[11px] text-vsc-fg-secondary border-b border-vsc-border/30 bg-vsc-bg-hover/30 animate-fade-in text-center">
           {loadedContextFiles.join(", ")} を読み込みました
         </div>
       )}
@@ -98,13 +95,15 @@ export function ChatView({
       )}
 
       {/* 入力エリア */}
-      <div className="border-t border-vsc-border px-3 py-2.5 bg-vsc-bg-secondary/50">
-        <InputArea
-          onSend={onSendMessage}
-          disabled={isStreaming}
-          onAbort={onAbortStream}
-          isStreaming={isStreaming}
-        />
+      <div className="border-t border-vsc-border/40 px-4 py-4 bg-vsc-bg/80 backdrop-blur-md sticky bottom-0 z-10">
+        <div className="max-w-4xl mx-auto">
+          <InputArea
+            onSend={onSendMessage}
+            disabled={isStreaming}
+            onAbort={onAbortStream}
+            isStreaming={isStreaming}
+          />
+        </div>
       </div>
     </div>
   );
