@@ -1,0 +1,236 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  *,
+  *::before,
+  *::after {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+  }
+
+  body {
+    font-family: var(--vscode-font-family);
+    font-size: var(--vscode-font-size);
+    color: var(--vscode-editor-foreground);
+    background: var(--vscode-editor-background);
+    overflow: hidden;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+
+  ::-webkit-scrollbar {
+    width: 6px;
+  }
+
+  ::-webkit-scrollbar-track {
+    background: transparent;
+  }
+
+  ::-webkit-scrollbar-thumb {
+    background: var(--vscode-scrollbarSlider-background);
+    border-radius: 3px;
+  }
+
+  ::-webkit-scrollbar-thumb:hover {
+    background: var(--vscode-scrollbarSlider-hoverBackground);
+  }
+
+  button:focus-visible,
+  input:focus-visible,
+  textarea:focus-visible,
+  select:focus-visible,
+  [role="combobox"]:focus-visible {
+    outline: 1px solid var(--vscode-focusBorder);
+    outline-offset: -1px;
+  }
+}
+
+@layer components {
+  /* Inline code */
+  .inline-code {
+    @apply rounded px-1.5 py-0.5 text-[0.9em];
+    font-family: var(--vscode-editor-font-family);
+    background: rgba(127, 127, 127, 0.15);
+  }
+
+  .accent-glow {
+    box-shadow: 0 0 0 1px var(--vscode-focusBorder),
+                0 0 8px -2px var(--vscode-focusBorder);
+  }
+
+  /* Markdown body styles */
+  .markdown-body {
+    line-height: 1.6;
+    word-wrap: break-word;
+  }
+
+  .markdown-body h1 {
+    @apply text-[1.4em] font-bold mt-4 mb-2 pb-1 border-b;
+    border-color: rgba(127, 127, 127, 0.2);
+  }
+
+  .markdown-body h2 {
+    @apply text-[1.2em] font-bold mt-3.5 mb-2 pb-1 border-b;
+    border-color: rgba(127, 127, 127, 0.15);
+  }
+
+  .markdown-body h3 {
+    @apply text-[1.1em] font-semibold mt-3 mb-1.5;
+  }
+
+  .markdown-body h4 {
+    @apply text-[1em] font-semibold mt-2.5 mb-1;
+  }
+
+  .markdown-body h5,
+  .markdown-body h6 {
+    @apply text-[0.95em] font-semibold mt-2 mb-1 text-vsc-fg-secondary;
+  }
+
+  .markdown-body h1:first-child,
+  .markdown-body h2:first-child,
+  .markdown-body h3:first-child,
+  .markdown-body h4:first-child {
+    @apply mt-0;
+  }
+
+  .markdown-body p {
+    @apply my-1.5;
+  }
+
+  .markdown-body p:first-child {
+    @apply mt-0;
+  }
+
+  .markdown-body p:last-child {
+    @apply mb-0;
+  }
+
+  .markdown-body ul,
+  .markdown-body ol {
+    @apply pl-5 my-1.5;
+  }
+
+  .markdown-body ul {
+    list-style-type: disc;
+  }
+
+  .markdown-body ol {
+    list-style-type: decimal;
+  }
+
+  .markdown-body li {
+    @apply my-0.5;
+  }
+
+  .markdown-body li > ul,
+  .markdown-body li > ol {
+    @apply my-0;
+  }
+
+  .markdown-body blockquote {
+    @apply border-l-2 pl-3 my-2 italic;
+    border-color: var(--vscode-button-background);
+    color: var(--vscode-descriptionForeground);
+  }
+
+  .markdown-body hr {
+    @apply my-3 border-0 border-t;
+    border-color: rgba(127, 127, 127, 0.3);
+  }
+
+  .markdown-body a {
+    color: var(--vscode-textLink-foreground);
+    text-decoration: none;
+  }
+
+  .markdown-body a:hover {
+    text-decoration: underline;
+  }
+
+  .markdown-body table {
+    @apply border-collapse w-full my-2 text-xs;
+  }
+
+  .markdown-body th,
+  .markdown-body td {
+    @apply px-2.5 py-1.5 text-left;
+    border: 1px solid rgba(127, 127, 127, 0.25);
+  }
+
+  .markdown-body th {
+    @apply font-semibold;
+    background: var(--vscode-list-hoverBackground);
+  }
+
+  .markdown-body tr:nth-child(even) {
+    background: rgba(127, 127, 127, 0.05);
+  }
+
+  .markdown-body strong {
+    @apply font-semibold;
+  }
+
+  .markdown-body img {
+    @apply max-w-full rounded-md my-2;
+  }
+
+  /* Code inside pre (code blocks) should NOT have inline-code styling */
+  .markdown-body pre code {
+    all: unset;
+    font-family: var(--vscode-editor-font-family);
+  }
+
+  /* highlight.js code blocks - reset background to blend with container */
+  .hljs {
+    background: transparent !important;
+    padding: 0 !important;
+  }
+}
+
+@layer utilities {
+  .scrollbar-thin {
+    scrollbar-width: thin;
+    scrollbar-color: var(--vscode-scrollbarSlider-background) transparent;
+  }
+}
+
+/* Radix Select Content */
+[data-radix-popper-content-wrapper] {
+  z-index: 50 !important;
+}
+
+[data-radix-select-content] {
+  animation: selectIn 0.15s ease-out;
+}
+
+/* Radix Collapsible Content */
+[data-radix-collapsible-content] {
+  overflow: hidden;
+}
+
+[data-radix-collapsible-content][data-state="open"] {
+  animation: collapsibleDown 0.2s ease-out;
+}
+
+[data-radix-collapsible-content][data-state="closed"] {
+  animation: collapsibleUp 0.15s ease-in;
+}
+
+@keyframes selectIn {
+  from { opacity: 0; transform: translateY(-4px) scale(0.96); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+@keyframes collapsibleDown {
+  from { height: 0; opacity: 0; }
+  to { height: var(--radix-collapsible-content-height); opacity: 1; }
+}
+
+@keyframes collapsibleUp {
+  from { height: var(--radix-collapsible-content-height); opacity: 1; }
+  to { height: 0; opacity: 0; }
+}

@@ -1,0 +1,221 @@
+import OpenAI from "openai";
+import { BaseProvider } from "./base";
+import { Message, ProviderType, ToolCall } from "../types/chat";
+
+export class AzureOpenAIProvider extends BaseProvider {
+  readonly type: ProviderType = "azure-openai";
+  readonly displayName = "Azure OpenAI";
+
+  private createClient(): OpenAI {
+    return new OpenAI({
+      baseURL: this.config.endpoint,
+      defaultHeaders: {
+        "api-key": this.config.apiKey || "",
+      },
+      defaultQuery: {
+        "api-version": "2024-06-01",
+      },
+      apiKey: this.config.apiKey,
+    });
+  }
+
+  private convertMessages(
+    messages: Message[],
+    systemPrompt: string
+  ): OpenAI.ChatCompletionMessageParam[] {
+    const result: OpenAI.ChatCompletionMessageParam[] = [
+      { role: "system", content: systemPrompt },
+    ];
+
+    for (const m of messages) {
+      if (m.role === "user") {
+        result.push({
+          role: "user",
+          content: m.content,
+        });
+      } else if (m.role === "assistant") {
+        const assistantMessage: OpenAI.ChatCompletionAssistantMessageParam = {
+          role: "assistant",
+          content: m.content || null,
+        };
+
+        if (m.toolCalls && m.toolCalls.length > 0) {
+          assistantMessage.tool_calls = m.toolCalls.map((tc) => ({
+            id: tc.id,
+            type: "function",
+            function: {
+              name: tc.name,
+              arguments: JSON.stringify(tc.arguments),
+            },
+          }));
+        }
+
+        result.push(assistantMessage);
+
+        if (m.toolCalls && m.toolCalls.length > 0) {
+          m.toolCalls.forEach((tc) => {
+            result.push({
+              role: "tool",
+              tool_call_id: tc.id,
+              content: tc.result || tc.error || "No result",
+            });
+          });
+        }
+      }
+    }
+
+    return result;
+  }
+
+  async chat(
+    messages: Message[],
+    systemPrompt: string,
+    onToken: (token: string) => void,
+    onToolCall?: (toolCall: ToolCall) => Promise<string>,
+    signal?: AbortSignal,
+    tools?: any[]
+  ): Promise<Message> {
+    const client = this.createClient();
+    let currentMessages = this.convertMessages(messages, systemPrompt);
+    let fullContent = "";
+    const allToolCalls: ToolCall[] = [];
+    let iteration = 0;
+    const maxIterations = 10;
+
+    while (iteration < maxIterations) {
+      iteration++;
+      let currentIterationContent = "";
+      const currentIterationToolCalls: ToolCall[] = [];
+      const toolCallBuffers: Map<number, { id: string; name: string; args: string }> = new Map();
+
+      const stream = await client.chat.completions.create(
+        {
+          model: this.config.deploymentName || this.config.model,
+          max_tokens: this.config.maxTokens || 8192,
+          messages: currentMessages,
+          stream: true,
+          tools: tools,
+        },
+        { signal }
+      );
+
+      for await (const chunk of stream) {
+        if (signal?.aborted) break;
+
+        const delta = chunk.choices[0]?.delta;
+        if (!delta) continue;
+
+        if (delta.content) {
+          currentIterationContent += delta.content;
+          fullContent += delta.content;
+          onToken(delta.content);
+        }
+
+        if (delta.tool_calls) {
+          for (const tc of delta.tool_calls) {
+            const idx = tc.index;
+
+            if (!toolCallBuffers.has(idx)) {
+              toolCallBuffers.set(idx, {
+                id: tc.id || "",
+                name: tc.function?.name || "",
+                args: "",
+              });
+            }
+
+            const buffer = toolCallBuffers.get(idx)!;
+            if (tc.id) buffer.id = tc.id;
+            if (tc.function?.name) buffer.name = tc.function.name;
+            if (tc.function?.arguments) buffer.args += tc.function.arguments;
+          }
+        }
+      }
+
+      // Finalize tool calls
+      for (const [, buffer] of toolCallBuffers) {
+        let parsedArgs: Record<string, unknown> = {};
+        try {
+          parsedArgs = JSON.parse(buffer.args);
+        } catch {
+          // Keep empty args
+        }
+
+        const toolCall: ToolCall = {
+          id: buffer.id,
+          name: buffer.name,
+          arguments: parsedArgs,
+          status: "running",
+        };
+        currentIterationToolCalls.push(toolCall);
+      }
+
+      allToolCalls.push(...currentIterationToolCalls);
+
+      if (currentIterationToolCalls.length === 0) {
+        break;
+      }
+
+      // Execute tools and add to history
+      const assistantMessage: OpenAI.ChatCompletionAssistantMessageParam = {
+        role: "assistant",
+        content: currentIterationContent || null,
+        tool_calls: currentIterationToolCalls.map((tc) => ({
+          id: tc.id,
+          type: "function",
+          function: {
+            name: tc.name,
+            arguments: JSON.stringify(tc.arguments),
+          },
+        })),
+      };
+
+      currentMessages.push(assistantMessage);
+
+      for (const tc of currentIterationToolCalls) {
+        if (onToolCall) {
+          try {
+            const result = await onToolCall(tc);
+            tc.status = "completed";
+            tc.result = result;
+            currentMessages.push({
+              role: "tool",
+              tool_call_id: tc.id,
+              content: result || "",
+            });
+          } catch (err: any) {
+            tc.status = "error";
+            tc.error = err.message || String(err);
+            currentMessages.push({
+              role: "tool",
+              tool_call_id: tc.id,
+              content: tc.error || "Unknown error",
+            });
+          }
+        }
+      }
+    }
+
+    return this.createAssistantMessage(
+      fullContent,
+      allToolCalls.length > 0 ? allToolCalls : undefined
+    );
+  }
+
+  async listModels(): Promise<string[]> {
+    return ["gpt-4o", "gpt-4o-mini", "gpt-4"];
+  }
+
+  async testConnection(): Promise<boolean> {
+    try {
+      const client = this.createClient();
+      await client.chat.completions.create({
+        model: this.config.deploymentName || this.config.model,
+        max_tokens: 1,
+        messages: [{ role: "user", content: "hi" }],
+      });
+      return true;
+    } catch {
+      return false;
+    }
+  }
+}

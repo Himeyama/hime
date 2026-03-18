@@ -1,0 +1,101 @@
+{
+  "name": "hime",
+  "displayName": "Hime",
+  "description": "AI Chat Extension for VSCode",
+  "version": "0.1.0",
+  "publisher": "hikari",
+  "engines": {
+    "vscode": "^1.96.0"
+  },
+  "categories": [
+    "Other"
+  ],
+  "activationEvents": [],
+  "main": "./dist/extension.js",
+  "contributes": {
+    "viewsContainers": {
+      "activitybar": [
+        {
+          "id": "hime-sidebar",
+          "title": "Hime",
+          "icon": "resources/icon.svg"
+        }
+      ]
+    },
+    "views": {
+      "hime-sidebar": [
+        {
+          "type": "webview",
+          "id": "hime.chatView",
+          "name": "Chat"
+        }
+      ]
+    },
+    "commands": [
+      {
+        "command": "hime.newChat",
+        "title": "Hime: 新規チャット"
+      },
+      {
+        "command": "hime.clearContext",
+        "title": "Hime: コンテキストクリア"
+      },
+      {
+        "command": "hime.compressContext",
+        "title": "Hime: コンテキスト圧縮"
+      },
+      {
+        "command": "hime.sendSelection",
+        "title": "Hime: 選択範囲を送信"
+      }
+    ],
+    "menus": {
+      "editor/context": [
+        {
+          "command": "hime.sendSelection",
+          "group": "hime"
+        }
+      ]
+    },
+    "configuration": {
+      "title": "Hime",
+      "properties": {}
+    }
+  },
+  "scripts": {
+    "compile": "npm run check-types && node esbuild.js",
+    "check-types": "tsc --noEmit",
+    "watch": "npm-run-all -p watch:ext watch:webview",
+    "watch:ext": "node esbuild.js --watch",
+    "watch:webview": "node esbuild.js --watch --webview",
+    "package": "npm run check-types && node esbuild.js --production",
+    "test": "vitest"
+  },
+  "dependencies": {
+    "@anthropic-ai/sdk": "latest",
+    "@modelcontextprotocol/sdk": "latest",
+    "@radix-ui/react-collapsible": "^1.1.12",
+    "@radix-ui/react-select": "^2.2.6",
+    "@radix-ui/react-tooltip": "^1.2.8",
+    "highlight.js": "^11.11.1",
+    "ollama": "latest",
+    "openai": "latest",
+    "react": "^19.0.0",
+    "react-dom": "^19.0.0",
+    "react-markdown": "latest",
+    "remark-gfm": "latest"
+  },
+  "devDependencies": {
+    "@types/react": "latest",
+    "@types/react-dom": "latest",
+    "@types/vscode": "latest",
+    "@vscode/webview-ui-toolkit": "latest",
+    "autoprefixer": "latest",
+    "esbuild": "latest",
+    "npm-run-all": "latest",
+    "postcss": "latest",
+    "tailwindcss": "^3.4.0",
+    "typescript": "^5.7.0",
+    "vitest": "latest"
+  }
+}

@@ -1,0 +1,11 @@
+node_modules/
+dist/
+out/
+*.vsix
+
+.env
+.env.*
+
+*.tsbuildinfo
+
+.vscode-test/

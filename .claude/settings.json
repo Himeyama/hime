@@ -1,0 +1,16 @@
+{
+  "permissions": {
+    "allow": [
+      "WebSearch",
+      "Bash(find /c/Users/hikari/sources/hime -type f -name *.ts -o -name *.tsx -o -name *.js)",
+      "Bash(npm install:*)",
+      "Bash(npx tsc:*)",
+      "Bash(node esbuild.js)",
+      "Bash(wc -l /c/Users/hikari/sources/hime/src/webview/components/*.tsx /c/Users/hikari/sources/hime/src/providers/*.ts)",
+      "Bash(npm run:*)",
+      "Bash(find c:Usershikarisourceshime -name *.md -type f)",
+      "Bash(grep -r import.*crypto c:Usershikarisourceshimesrcproviders)",
+      "Bash(npm uninstall:*)"
+    ]
+  }
+}
