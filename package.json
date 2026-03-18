@@ -86,6 +86,7 @@
     "remark-gfm": "latest"
   },
   "devDependencies": {
+    "@types/node": "^25.5.0",
     "@types/react": "latest",
     "@types/react-dom": "latest",
     "@types/vscode": "latest",
