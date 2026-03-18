@@ -26,7 +26,7 @@ export function MessageBubble({ message, isStreaming, streamingContent }: Messag
         className={`text-[13px] leading-relaxed relative ${
           isUser
             ? "bg-vsc-accent text-vsc-accent-fg rounded-2xl rounded-tr-none px-4 py-2.5 max-w-[90%] shadow-sm"
-            : "w-full bg-vsc-bg-secondary/30 rounded-2xl rounded-tl-none px-4 py-3 border border-vsc-border/30"
+            : "w-full py-1.5"
         }`}
       >
         <div className={`markdown-body ${isUser ? "text-vsc-accent-fg" : ""}`}>
