@@ -2,6 +2,8 @@
 
 VSCode上で複数のAIプロバイダーとチャットできるサイドバーパネル型の拡張機能。
 
+![Hime](docs/image.png)
+
 ## 機能
 
 - **マルチプロバイダー対応** — Anthropic (Claude)・OpenAI・Azure OpenAI・Ollama をドロップダウンで切り替え
