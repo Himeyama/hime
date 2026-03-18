@@ -4,6 +4,10 @@
   "description": "AI Chat Extension for VSCode",
   "version": "0.1.0",
   "publisher": "hikari",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/Himeyama/hime.git"
+  },
   "engines": {
     "vscode": "^1.96.0"
   },
