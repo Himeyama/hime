@@ -68,7 +68,7 @@
     "watch": "npm-run-all -p watch:ext watch:webview",
     "watch:ext": "node esbuild.js --watch",
     "watch:webview": "node esbuild.js --watch --webview",
-    "package": "npm run check-types && node esbuild.js --production",
+    "package": "npm run check-types && node esbuild.js --production && node esbuild.js --production --webview",
     "test": "vitest"
   },
   "dependencies": {

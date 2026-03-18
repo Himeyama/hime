@@ -26,3 +26,12 @@ jobs:
         
       - name: Run tests
         run: npm test -- --run
+
+      - name: Package extension
+        run: npx @vscode/vsce package --no-dependencies
+        
+      - name: Upload VSIX
+        uses: actions/upload-artifact@v4
+        with:
+          name: hime-extension
+          path: "*.vsix"
