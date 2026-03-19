@@ -40,11 +40,14 @@
 
   button:focus-visible,
   input:focus-visible,
-  textarea:focus-visible,
   select:focus-visible,
   [role="combobox"]:focus-visible {
     outline: 1px solid var(--vscode-focusBorder);
     outline-offset: -1px;
+  }
+
+  textarea:focus-visible {
+    outline: none;
   }
 }
 
