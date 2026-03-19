@@ -1,5 +1,5 @@
 import React from "react";
-import { Chat, ProviderType } from "../../types/chat";
+import { Chat, ProviderType, ToolCall } from "../../types/chat";
 import { MessageList } from "./MessageList";
 import { InputArea } from "./InputArea";
 import { ProviderSelect } from "./ProviderSelect";
@@ -9,6 +9,7 @@ interface ChatViewProps {
   isStreaming: boolean;
   streamingContent: string;
   streamingMessageId: string | null;
+  streamingToolCalls?: ToolCall[];
   error: string | null;
   loadedContextFiles: string[] | null;
   selectedProvider: ProviderType;
@@ -24,6 +25,7 @@ export function ChatView({
   isStreaming,
   streamingContent,
   streamingMessageId,
+  streamingToolCalls,
   error,
   loadedContextFiles,
   selectedProvider,
@@ -83,6 +85,7 @@ export function ChatView({
         isStreaming={isStreaming}
         streamingContent={streamingContent}
         streamingMessageId={streamingMessageId}
+        streamingToolCalls={streamingToolCalls}
       />
 
       {error && (

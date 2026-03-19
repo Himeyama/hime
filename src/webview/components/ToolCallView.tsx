@@ -33,7 +33,7 @@ export function ToolCallView({ toolCall }: ToolCallViewProps) {
       </div>
       
       {result && (
-        <div className={`text-[12px] p-2.5 rounded-lg border bg-vsc-bg-secondary/20 font-vsc-editor whitespace-pre-wrap overflow-x-auto max-h-[300px] scrollbar-thin ${
+        <div className={`text-[12px] p-2.5 rounded-lg border bg-vsc-bg-secondary/20 font-vsc-editor whitespace-pre-wrap overflow-auto max-h-[300px] scrollbar-thin ${
           isError ? "border-vsc-danger/20 text-vsc-danger/80" : "border-vsc-border/20 text-vsc-fg/80"
         }`}>
           {result}

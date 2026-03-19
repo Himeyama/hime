@@ -24,9 +24,9 @@ export type WebviewToExtensionMessage =
 // Extension → Webview
 export type ExtensionToWebviewMessage =
   | { type: "token"; chatId: string; messageId: string; content: string }
-  | { type: "streamEnd"; chatId: string; messageId: string; fullContent: string }
+  | { type: "streamEnd"; chatId: string; messageId: string; fullContent: string; toolCalls?: import("./chat").ToolCall[] }
   | { type: "toolCall"; chatId: string; messageId: string; toolCall: ToolCall }
-  | { type: "toolResult"; chatId: string; messageId: string; toolCallId: string; result: string }
+  | { type: "toolResult"; chatId: string; messageId: string; toolCallId: string; result: string; isError?: boolean }
   | { type: "error"; chatId: string; error: string }
   | { type: "chatListUpdate"; chats: ChatMeta[] }
   | { type: "chatLoaded"; chat: import("./chat").Chat }

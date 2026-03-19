@@ -101,6 +101,7 @@ export function App() {
         isStreaming={chat.isStreaming}
         streamingContent={chat.streamingContent}
         streamingMessageId={chat.streamingMessageId}
+        streamingToolCalls={chat.streamingToolCalls}
         error={chat.error}
         loadedContextFiles={chat.loadedContextFiles}
         selectedProvider={selectedProvider}

@@ -1,5 +1,5 @@
 import { useState, useCallback, useEffect, useRef } from "react";
-import { Chat, Message, ProviderType, ChatMeta } from "../../types/chat";
+import { Chat, Message, ProviderType, ChatMeta, ToolCall } from "../../types/chat";
 import { ExtensionToWebviewMessage } from "../../types/messages";
 import { useVSCode } from "./useVSCode";
 
@@ -10,6 +10,7 @@ export function useChat() {
   const [isStreaming, setIsStreaming] = useState(false);
   const [streamingContent, setStreamingContent] = useState("");
   const [streamingMessageId, setStreamingMessageId] = useState<string | null>(null);
+  const [streamingToolCalls, setStreamingToolCalls] = useState<ToolCall[]>([]);
   const [error, setError] = useState<string | null>(null);
   const [loadedContextFiles, setLoadedContextFiles] = useState<string[] | null>(null);
 
@@ -43,15 +44,15 @@ export function useChat() {
             setIsStreaming(false);
             setStreamingContent("");
             setStreamingMessageId(null);
+            setStreamingToolCalls([]);
             setCurrentChat((prev) => {
               if (!prev) return prev;
               const existingIdx = prev.messages.findIndex((m) => m.id === msg.messageId);
               if (existingIdx >= 0) {
                 const updated = [...prev.messages];
-                updated[existingIdx] = { ...updated[existingIdx], content: msg.fullContent };
+                updated[existingIdx] = { ...updated[existingIdx], content: msg.fullContent, toolCalls: msg.toolCalls };
                 return { ...prev, messages: updated };
               }
-              // If not found, add it
               return {
                 ...prev,
                 messages: [
@@ -61,6 +62,7 @@ export function useChat() {
                     role: "assistant" as const,
                     content: msg.fullContent,
                     timestamp: new Date().toISOString(),
+                    toolCalls: msg.toolCalls,
                   },
                 ],
               };
@@ -69,38 +71,18 @@ export function useChat() {
           break;
         case "toolCall":
           if (msg.chatId === chatId) {
-            setCurrentChat((prev) => {
-              if (!prev) return prev;
-              const existingIdx = prev.messages.findIndex((m) => m.id === msg.messageId);
-              if (existingIdx >= 0) {
-                const updated = [...prev.messages];
-                const msgToUpdate = updated[existingIdx];
-                const toolCalls = [...(msgToUpdate.toolCalls || []), msg.toolCall];
-                updated[existingIdx] = { ...msgToUpdate, toolCalls };
-                return { ...prev, messages: updated };
-              }
-              // If message doesn't exist yet (very rare race condition), we might skip or add placeholder
-              return prev;
-            });
+            setStreamingToolCalls((prev) => [...prev, msg.toolCall]);
           }
           break;
         case "toolResult":
           if (msg.chatId === chatId) {
-            setCurrentChat((prev) => {
-              if (!prev) return prev;
-              const updatedMessages = prev.messages.map((m) => {
-                if (m.id === msg.messageId && m.toolCalls) {
-                  const toolCalls = m.toolCalls.map((tc) =>
-                    tc.id === msg.toolCallId
-                      ? { ...tc, status: "completed" as const, result: msg.result }
-                      : tc
-                  );
-                  return { ...m, toolCalls };
-                }
-                return m;
-              });
-              return { ...prev, messages: updatedMessages };
-            });
+            setStreamingToolCalls((prev) =>
+              prev.map((tc) =>
+                tc.id === msg.toolCallId
+                  ? { ...tc, status: msg.isError ? ("error" as const) : ("completed" as const), result: msg.isError ? undefined : msg.result, error: msg.isError ? msg.result : undefined }
+                  : tc
+              )
+            );
           }
           break;
         case "projectContextLoaded":
@@ -209,6 +191,7 @@ export function useChat() {
     isStreaming,
     streamingContent,
     streamingMessageId,
+    streamingToolCalls,
     error,
     loadedContextFiles,
     sendMessage,

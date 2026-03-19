@@ -1,7 +1,7 @@
 import React from "react";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
-import { Message } from "../../types/chat";
+import { Message, ToolCall } from "../../types/chat";
 import { CodeBlock } from "./CodeBlock";
 import { ToolCallView } from "./ToolCallView";
 import { ImagePreview } from "./ImagePreview";
@@ -10,9 +10,10 @@ interface MessageBubbleProps {
   message: Message;
   isStreaming?: boolean;
   streamingContent?: string;
+  streamingToolCalls?: ToolCall[];
 }
 
-export function MessageBubble({ message, isStreaming, streamingContent }: MessageBubbleProps) {
+export function MessageBubble({ message, isStreaming, streamingContent, streamingToolCalls }: MessageBubbleProps) {
   const content = streamingContent || message.content;
   const isUser = message.role === "user";
 
@@ -29,6 +30,10 @@ export function MessageBubble({ message, isStreaming, streamingContent }: Messag
             : "w-full py-1.5"
         }`}
       >
+        {(streamingToolCalls || message.toolCalls)?.map((tc) => (
+          <ToolCallView key={tc.id} toolCall={tc} />
+        ))}
+
         <div className={`markdown-body ${isUser ? "text-vsc-accent-fg" : ""}`}>
           <ReactMarkdown
             remarkPlugins={[remarkGfm]}
@@ -73,10 +78,6 @@ export function MessageBubble({ message, isStreaming, streamingContent }: Messag
             </div>
           )
         )}
-
-        {message.toolCalls?.map((tc) => (
-          <ToolCallView key={tc.id} toolCall={tc} />
-        ))}
 
         {isStreaming && <span className="animate-blink text-vsc-accent ml-0.5">▊</span>}
 

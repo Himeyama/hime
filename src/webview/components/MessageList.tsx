@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useMemo } from "react";
-import { Message } from "../../types/chat";
+import { Message, ToolCall } from "../../types/chat";
 import { MessageBubble } from "./MessageBubble";
 
 interface MessageListProps {
@@ -7,6 +7,7 @@ interface MessageListProps {
   isStreaming: boolean;
   streamingContent: string;
   streamingMessageId: string | null;
+  streamingToolCalls?: ToolCall[];
 }
 
 export function MessageList({
@@ -14,6 +15,7 @@ export function MessageList({
   isStreaming,
   streamingContent,
   streamingMessageId,
+  streamingToolCalls,
 }: MessageListProps) {
   const bottomRef = useRef<HTMLDivElement>(null);
 
@@ -39,6 +41,7 @@ export function MessageList({
           message={msg}
           isStreaming={isStreaming && msg.id === streamingMessageId}
           streamingContent={msg.id === streamingMessageId ? streamingContent : undefined}
+          streamingToolCalls={msg.id === streamingMessageId ? streamingToolCalls : undefined}
         />
       ))}
       {isStreaming && streamingMessageId && !visibleMessages.some((m) => m.id === streamingMessageId) && (
@@ -51,6 +54,7 @@ export function MessageList({
           }}
           isStreaming={true}
           streamingContent={streamingContent}
+          streamingToolCalls={streamingToolCalls}
         />
       )}
       <div ref={bottomRef} />

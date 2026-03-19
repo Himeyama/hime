@@ -369,6 +369,7 @@ class HimeChatViewProvider implements vscode.WebviewViewProvider {
               messageId,
               toolCallId: toolCall.id,
               result: errorMsg,
+              isError: true,
             });
             throw err;
           }
@@ -396,6 +397,7 @@ class HimeChatViewProvider implements vscode.WebviewViewProvider {
         chatId,
         messageId,
         fullContent: assistantMessage.content,
+        toolCalls: assistantMessage.toolCalls,
       });
     } catch (err: any) {
       if (err.name === "AbortError") return;
