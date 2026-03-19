@@ -91,7 +91,7 @@ export class AzureOpenAIProvider extends BaseProvider {
       const stream = await client.chat.completions.create(
         {
           model: this.config.deploymentName || this.config.model,
-          max_tokens: this.config.maxTokens || 8192,
+          max_completion_tokens: this.config.maxTokens || 8192,
           messages: currentMessages,
           stream: true,
           tools: tools,
@@ -210,7 +210,7 @@ export class AzureOpenAIProvider extends BaseProvider {
       const client = this.createClient();
       await client.chat.completions.create({
         model: this.config.deploymentName || this.config.model,
-        max_tokens: 1,
+        max_completion_tokens: 1,
         messages: [{ role: "user", content: "hi" }],
       });
       return true;
