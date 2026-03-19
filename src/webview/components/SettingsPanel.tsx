@@ -21,6 +21,7 @@ const PROVIDER_NAMES: Record<ProviderType, string> = {
   openai: "OpenAI",
   "azure-openai": "Azure OpenAI",
   ollama: "Ollama",
+  openrouter: "OpenRouter",
 };
 
 export function SettingsPanel({

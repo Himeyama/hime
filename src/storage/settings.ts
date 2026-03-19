@@ -23,6 +23,9 @@ function createDefaultSettings(): AppSettings {
         model: DEFAULT_MODELS.ollama,
         endpoint: "http://localhost:11434",
       },
+      openrouter: {
+        model: DEFAULT_MODELS.openrouter,
+      },
     },
     systemPrompt: "",
     mcpServers: {},

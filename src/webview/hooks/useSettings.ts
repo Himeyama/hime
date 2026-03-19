@@ -12,6 +12,7 @@ export function useSettings() {
     openai: false,
     "azure-openai": false,
     ollama: false,
+    openrouter: false,
   });
   const [connectionTestResult, setConnectionTestResult] = useState<{
     provider: ProviderType;
@@ -23,6 +24,7 @@ export function useSettings() {
     openai: [],
     "azure-openai": [],
     ollama: [],
+    openrouter: [],
   });
 
   useEffect(() => {

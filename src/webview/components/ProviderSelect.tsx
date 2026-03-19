@@ -12,6 +12,7 @@ const PROVIDERS: { value: ProviderType; label: string }[] = [
   { value: "openai", label: "OpenAI" },
   { value: "azure-openai", label: "Azure OpenAI" },
   { value: "ollama", label: "Ollama" },
+  { value: "openrouter", label: "OpenRouter" },
 ];
 
 export function ProviderSelect({ selected, onChange }: ProviderSelectProps) {

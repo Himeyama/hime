@@ -57,4 +57,4 @@ export interface ChatsIndex {
   chats: ChatMeta[];
 }
 
-export type ProviderType = "anthropic" | "openai" | "azure-openai" | "ollama";
+export type ProviderType = "anthropic" | "openai" | "azure-openai" | "ollama" | "openrouter";
