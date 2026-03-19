@@ -20,8 +20,12 @@ let mcpClient: MCPClientManager;
 let toolExecutor: ToolExecutor;
 let activeEditorTracker: ActiveEditorTracker;
 let currentAbortController: AbortController | null = null;
+let outputChannel: vscode.OutputChannel;
 
 export async function activate(context: vscode.ExtensionContext) {
+  outputChannel = vscode.window.createOutputChannel("Hime");
+  context.subscriptions.push(outputChannel);
+
   // Initialize storage
   chatStorage = new ChatHistoryStorage();
   settingsStorage = new SettingsStorage();
@@ -323,6 +327,16 @@ class HimeChatViewProvider implements vscode.WebviewViewProvider {
         model: providerConfig.model,
         toolCalls: [],
       };
+
+      outputChannel.appendLine(`\n${"=".repeat(60)}`);
+      outputChannel.appendLine(`[${new Date().toISOString()}] REQUEST`);
+      outputChannel.appendLine(JSON.stringify({
+        provider: providerType,
+        model: providerConfig.model,
+        systemPrompt,
+        messages: relevantMessages,
+        tools: toolExecutor.getToolsForProvider(providerType),
+      }, null, 2));
 
       const finalAssistantMessage = await provider.chat(
         relevantMessages,
