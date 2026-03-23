@@ -224,6 +224,10 @@ class HimeChatViewProvider implements vscode.WebviewViewProvider {
           await this.sendChatList();
           break;
         }
+        case "getMcpStatus": {
+          this.sendMcpStatus();
+          break;
+        }
         case "addReaction": {
           const chat = await chatStorage.loadChat(message.chatId);
           const msg = chat.messages.find((m) => m.id === message.messageId);
@@ -522,10 +526,16 @@ class HimeChatViewProvider implements vscode.WebviewViewProvider {
       const settings = await settingsStorage.load();
       const workspacePath = vscode.workspace.workspaceFolders?.[0]?.uri.fsPath || "";
       await mcpClient.connectAll(workspacePath, settings.mcpServers);
+      this.sendMcpStatus();
       vscode.window.showInformationMessage("MCP サーバーに再接続しました。");
     } catch (err: any) {
       vscode.window.showErrorMessage(`MCP 接続エラー: ${err.message}`);
     }
+  }
+
+  private sendMcpStatus() {
+    const servers = mcpClient.getServerStatuses();
+    this.sendToWebview({ type: "mcpStatus", servers });
   }
 
   private async sendChatList() {

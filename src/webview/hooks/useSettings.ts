@@ -26,9 +26,11 @@ export function useSettings() {
     ollama: [],
     openrouter: [],
   });
+  const [mcpStatus, setMcpStatus] = useState<{ name: string; status: "connected" | "error"; toolCount: number }[]>([]);
 
   useEffect(() => {
     postMessage({ command: "getSettings" });
+    postMessage({ command: "getMcpStatus" });
 
     return onMessage((msg: ExtensionToWebviewMessage) => {
       switch (msg.type) {
@@ -45,6 +47,9 @@ export function useSettings() {
           break;
         case "modelList":
           setModels((prev) => ({ ...prev, [msg.provider]: msg.models }));
+          break;
+        case "mcpStatus":
+          setMcpStatus(msg.servers);
           break;
       }
     });
@@ -95,6 +100,7 @@ export function useSettings() {
     hasApiKeys,
     connectionTestResult,
     models,
+    mcpStatus,
     updateSettings,
     setApiKey,
     deleteApiKey,

@@ -27,6 +27,18 @@ export function App() {
     settingsHook.updateSettings({ defaultProvider: provider });
   };
 
+  const mcpStatus = settingsHook.mcpStatus;
+  const mcpTotal = mcpStatus.length;
+  const mcpConnected = mcpStatus.filter((s) => s.status === "connected").length;
+  const mcpColor =
+    mcpTotal === 0
+      ? null
+      : mcpConnected === mcpTotal
+      ? "text-green-500"
+      : mcpConnected === 0
+      ? "text-red-500"
+      : "text-yellow-600";
+
   return (
     <div className="flex flex-col h-screen">
       {/* Header */}
@@ -37,6 +49,14 @@ export function App() {
           </h1>
         </div>
         <div className="flex items-center gap-1">
+          {mcpTotal > 0 && mcpColor && (
+            <span
+              className={`text-xs font-mono px-1.5 py-0.5 rounded ${mcpColor}`}
+              title={mcpStatus.map((s) => `${s.name}: ${s.status}`).join("\n")}
+            >
+              MCP ({mcpConnected}/{mcpTotal})
+            </span>
+          )}
           <button
             className="bg-transparent border-none text-vsc-fg cursor-pointer p-1 px-1.5 rounded hover:bg-vsc-bg-hover transition-colors"
             onClick={() => setShowSettings(!showSettings)}

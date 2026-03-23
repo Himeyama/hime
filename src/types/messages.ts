@@ -20,7 +20,8 @@ export type WebviewToExtensionMessage =
   | { command: "abortStream" }
   | { command: "openSettingsJson" }
   | { command: "addReaction"; chatId: string; messageId: string; reaction: "thumbsUp" | "thumbsDown" }
-  | { command: "getChatList" };
+  | { command: "getChatList" }
+  | { command: "getMcpStatus" };
 
 // Extension → Webview
 export type ExtensionToWebviewMessage =

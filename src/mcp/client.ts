@@ -7,6 +7,7 @@ import * as path from "path";
 
 export class MCPClientManager {
   private connections: Map<string, { client: Client; transport: StdioClientTransport; tools: MCPTool[] }> = new Map();
+  private serverStatuses: Map<string, "connected" | "error"> = new Map();
 
   async loadConfig(workspacePath: string): Promise<MCPConfig | null> {
     try {
@@ -20,6 +21,7 @@ export class MCPClientManager {
 
   async connectAll(workspacePath: string, mcpServers?: Record<string, MCPServerConfig>): Promise<void> {
     await this.disconnectAll();
+    this.serverStatuses.clear();
 
     let servers = mcpServers;
     if (!servers) {
@@ -34,8 +36,10 @@ export class MCPClientManager {
     for (const [name, serverConfig] of Object.entries(servers)) {
       try {
         await this.connect(name, serverConfig);
+        this.serverStatuses.set(name, "connected");
       } catch (err) {
         console.error(`Failed to connect to MCP server "${name}":`, err);
+        this.serverStatuses.set(name, "error");
       }
     }
   }
@@ -65,6 +69,14 @@ export class MCPClientManager {
     }));
 
     this.connections.set(name, { client, transport, tools });
+  }
+
+  getServerStatuses(): { name: string; status: "connected" | "error"; toolCount: number }[] {
+    return Array.from(this.serverStatuses.entries()).map(([name, status]) => ({
+      name,
+      status,
+      toolCount: status === "connected" ? (this.connections.get(name)?.tools.length ?? 0) : 0,
+    }));
   }
 
   listConnections(): MCPConnection[] {
