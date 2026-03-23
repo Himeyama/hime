@@ -114,9 +114,6 @@ class HimeChatViewProvider implements vscode.WebviewViewProvider {
     webviewView.webview.onDidReceiveMessage(
       (message: WebviewToExtensionMessage) => this.handleMessage(message)
     );
-
-    // Send initial chat list
-    this.sendChatList();
   }
 
   sendToWebview(message: ExtensionToWebviewMessage) {
@@ -221,6 +218,10 @@ class HimeChatViewProvider implements vscode.WebviewViewProvider {
           const settingsPath = path.join(os.homedir(), ".hime", "settings.json");
           const uri = vscode.Uri.file(settingsPath);
           await vscode.window.showTextDocument(uri);
+          break;
+        }
+        case "getChatList": {
+          await this.sendChatList();
           break;
         }
         case "addReaction": {

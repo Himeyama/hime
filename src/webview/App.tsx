@@ -14,7 +14,6 @@ export function App() {
   const settingsHook = useSettings();
   const { postMessage } = useVSCode();
   const [showSettings, setShowSettings] = useState(false);
-  const [showChatList, setShowChatList] = useState(true);
   const [selectedProvider, setSelectedProvider] = useState<ProviderType>("anthropic");
 
   useEffect(() => {
@@ -33,17 +32,6 @@ export function App() {
       {/* Header */}
       <header className="flex justify-between items-center px-3 py-2.5 border-b border-vsc-border bg-vsc-bg-secondary">
         <div className="flex items-center gap-1.5">
-          <button
-            className="bg-transparent border-none text-vsc-fg cursor-pointer p-1 px-1.5 rounded hover:bg-vsc-bg-hover transition-colors"
-            onClick={() => setShowChatList(!showChatList)}
-            title="チャット一覧"
-          >
-            <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round">
-              <line x1="2" y1="4" x2="14" y2="4" />
-              <line x1="2" y1="8" x2="14" y2="8" />
-              <line x1="2" y1="12" x2="14" y2="12" />
-            </svg>
-          </button>
           <h1 className="text-sm font-bold tracking-wide bg-gradient-to-r from-purple-400 to-pink-400 bg-clip-text text-transparent">
             Hime
           </h1>
@@ -87,14 +75,12 @@ export function App() {
         />
       )}
 
-      {showChatList && (
-        <ChatList
-          chats={chat.chats}
-          currentChatId={chat.currentChat?.id || null}
-          onSelect={chat.loadChat}
-          onDelete={chat.deleteChat}
-        />
-      )}
+      <ChatList
+        chats={chat.chats}
+        currentChatId={chat.currentChat?.id || null}
+        onSelect={chat.loadChat}
+        onDelete={chat.deleteChat}
+      />
 
       <ChatView
         chat={chat.currentChat}

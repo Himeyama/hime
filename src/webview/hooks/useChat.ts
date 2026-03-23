@@ -19,6 +19,10 @@ export function useChat() {
   currentChatIdRef.current = currentChat?.id ?? null;
 
   useEffect(() => {
+    postMessage({ command: "getChatList" });
+  }, [postMessage]);
+
+  useEffect(() => {
     return onMessage((msg: ExtensionToWebviewMessage) => {
       const chatId = currentChatIdRef.current;
 

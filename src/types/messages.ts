@@ -19,7 +19,8 @@ export type WebviewToExtensionMessage =
   | { command: "reconnectMcp" }
   | { command: "abortStream" }
   | { command: "openSettingsJson" }
-  | { command: "addReaction"; chatId: string; messageId: string; reaction: "thumbsUp" | "thumbsDown" };
+  | { command: "addReaction"; chatId: string; messageId: string; reaction: "thumbsUp" | "thumbsDown" }
+  | { command: "getChatList" };
 
 // Extension → Webview
 export type ExtensionToWebviewMessage =
