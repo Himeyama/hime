@@ -36,21 +36,24 @@ export async function activate(context: vscode.ExtensionContext) {
   mcpClient = new MCPClientManager();
   toolExecutor = new ToolExecutor(mcpClient);
 
-  // Connect MCP servers
-  const workspacePath = vscode.workspace.workspaceFolders?.[0]?.uri.fsPath;
-  if (workspacePath) {
-    settingsStorage.load().then((settings) => {
-      mcpClient.connectAll(workspacePath, settings.mcpServers).catch((err) => {
-        console.error("MCP connection error:", err);
-      });
-    });
-  }
-
   // Register webview provider
   const provider = new HimeChatViewProvider(context);
   context.subscriptions.push(
     vscode.window.registerWebviewViewProvider("hime.chatView", provider)
   );
+
+  // Connect MCP servers and notify webview when done
+  const workspacePath = vscode.workspace.workspaceFolders?.[0]?.uri.fsPath;
+  if (workspacePath) {
+    settingsStorage.load().then(async (settings) => {
+      try {
+        await mcpClient.connectAll(workspacePath, settings.mcpServers);
+      } catch (err) {
+        console.error("MCP connection error:", err);
+      }
+      provider.sendMcpStatus();
+    });
+  }
 
   // Register commands
   context.subscriptions.push(
@@ -533,7 +536,7 @@ class HimeChatViewProvider implements vscode.WebviewViewProvider {
     }
   }
 
-  private sendMcpStatus() {
+  sendMcpStatus() {
     const servers = mcpClient.getServerStatuses();
     this.sendToWebview({ type: "mcpStatus", servers });
   }

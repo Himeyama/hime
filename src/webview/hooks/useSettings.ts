@@ -26,7 +26,7 @@ export function useSettings() {
     ollama: [],
     openrouter: [],
   });
-  const [mcpStatus, setMcpStatus] = useState<{ name: string; status: "connected" | "error"; toolCount: number }[]>([]);
+  const [mcpStatus, setMcpStatus] = useState<{ name: string; status: "connected" | "disconnected" | "error"; toolCount: number }[]>([]);
 
   useEffect(() => {
     postMessage({ command: "getSettings" });
