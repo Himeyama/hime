@@ -223,8 +223,8 @@ export class OpenRouterProvider extends BaseProvider {
         messages: [{ role: "user", content: "hi" }],
       });
       return true;
-    } catch {
-      return false;
+    } catch (err) {
+      throw err;
     }
   }
 }

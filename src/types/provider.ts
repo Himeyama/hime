@@ -33,6 +33,7 @@ export const DEFAULT_ENDPOINTS: Record<ProviderType, string> = {
   "azure-openai": "",
   ollama: "http://localhost:11434",
   openrouter: "https://openrouter.ai/api/v1",
+  google: "",
 };
 
 export const DEFAULT_MODELS: Record<ProviderType, string> = {
@@ -41,4 +42,5 @@ export const DEFAULT_MODELS: Record<ProviderType, string> = {
   "azure-openai": "gpt-4o",
   ollama: "llama3.1",
   openrouter: "anthropic/claude-sonnet-4-5",
+  google: "gemini-2.5-flash",
 };

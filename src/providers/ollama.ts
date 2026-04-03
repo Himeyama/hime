@@ -158,8 +158,8 @@ export class OllamaProvider extends BaseProvider {
       const client = this.createClient();
       await client.list();
       return true;
-    } catch {
-      return false;
+    } catch (err) {
+      throw err;
     }
   }
 }

@@ -6,7 +6,7 @@ VSCode上で複数のAIプロバイダーとチャットできるサイドバー
 
 ## 機能
 
-- **マルチプロバイダー対応** — Anthropic (Claude)・OpenAI・Azure OpenAI・Ollama・OpenRouter をドロップダウンで切り替え
+- **マルチプロバイダー対応** — Anthropic (Claude)・OpenAI・Azure OpenAI・Ollama・OpenRouter・Google Gemini をドロップダウンで切り替え
 - **ストリーミング応答** — トークン単位でリアルタイム表示
 - **MCP連携** — 外部MCPサーバーに接続し、ファイル操作・DB操作などのツールをAIから実行（ツール呼び出しループ対応）
 - **リッチUI** — Markdown描画、コードブロックのシンタックスハイライト、コピーボタン、画像表示、ファイル添付、リアクション
@@ -75,8 +75,33 @@ Webview の DevTools は `Ctrl+Shift+P` → `Developer: Open Webview Developer T
 | Azure OpenAI | 必要 | ユーザー指定 |
 | Ollama | 不要 | `http://localhost:11434` |
 | OpenRouter | 必要 | `https://openrouter.ai/api` |
+| Google Gemini | 下記参照 | — |
 
 API キーは VSCode の SecretStorage に暗号化保存されます。
+
+### Google Gemini の認証
+
+2つの認証モードをサポートしています。
+
+**Gemini Developer API（API キー）**
+
+[Google AI Studio](https://aistudio.google.com/) で API キーを発行し、設定の「API キー」欄に入力します。プロジェクト ID・リージョンは不要です。
+
+**Vertex AI（ADC 認証）**
+
+API キーを空欄にし、プロジェクト ID とリージョンを設定します。事前に Application Default Credentials (ADC) の設定が必要です。
+
+```powershell
+gcloud auth application-default login
+gcloud auth application-default set-quota-project YOUR_PROJECT_ID
+gcloud services enable aiplatform.googleapis.com --project=YOUR_PROJECT_ID
+```
+
+| 設定項目 | 値 |
+|---|---|
+| API キー | （空欄） |
+| プロジェクト ID | Google Cloud プロジェクト ID |
+| リージョン | 例: `us-central1` |
 
 ## MCP サーバー設定
 
@@ -113,7 +138,8 @@ hime/
 │   │   ├── openai.ts         # OpenAI 実装
 │   │   ├── azure-openai.ts   # Azure OpenAI 実装
 │   │   ├── ollama.ts         # Ollama (ローカルLLM) 実装
-│   │   └── openrouter.ts     # OpenRouter 実装
+│   │   ├── openrouter.ts     # OpenRouter 実装
+│   │   └── google.ts         # Google Gemini 実装
 │   ├── mcp/
 │   │   ├── client.ts         # MCPクライアント管理
 │   │   └── tool-executor.ts  # MCPツール定義変換

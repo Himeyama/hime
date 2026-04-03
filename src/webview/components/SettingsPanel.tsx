@@ -22,6 +22,7 @@ const PROVIDER_NAMES: Record<ProviderType, string> = {
   "azure-openai": "Azure OpenAI",
   ollama: "Ollama",
   openrouter: "OpenRouter",
+  google: "Google Gemini",
 };
 
 export function SettingsPanel({
@@ -126,10 +127,12 @@ export function SettingsPanel({
           </Collapsible.Trigger>
 
           <Collapsible.Content className="pl-4 pb-2 pt-1 space-y-2.5 animate-slide-down">
-            {/* APIキー */}
+            {/* APIキー / アクセストークン */}
             {provider !== "ollama" && (
               <div>
-                <label className="block text-xs text-vsc-fg-secondary mb-1">APIキー:</label>
+                <label className="block text-xs text-vsc-fg-secondary mb-1">
+                  {provider === "google" ? "API キー (Gemini Developer API 用):" : "APIキー:"}
+                </label>
                 <div className="flex gap-1 items-center">
                   <input
                     type={showApiKey[provider] ? "text" : "password"}
@@ -179,9 +182,11 @@ export function SettingsPanel({
               </div>
             )}
 
-            {/* エンドポイント */}
+            {/* エンドポイント / プロジェクト ID */}
             <div>
-              <label className="block text-xs text-vsc-fg-secondary mb-1">エンドポイント:</label>
+              <label className="block text-xs text-vsc-fg-secondary mb-1">
+                {provider === "google" ? "プロジェクト ID (Vertex AI 用):" : "エンドポイント:"}
+              </label>
               <input
                 type="text"
                 className="w-full bg-vsc-input-bg text-vsc-input-fg border border-vsc-input-border rounded-md px-2 py-1 text-xs outline-none focus:border-vsc-accent transition-colors"
@@ -191,10 +196,12 @@ export function SettingsPanel({
               />
             </div>
 
-            {/* デプロイメント名（Azure のみ） */}
-            {provider === "azure-openai" && (
+            {/* デプロイメント名（Azure）/ リージョン（Google） */}
+            {(provider === "azure-openai" || provider === "google") && (
               <div>
-                <label className="block text-xs text-vsc-fg-secondary mb-1">デプロイメント名:</label>
+                <label className="block text-xs text-vsc-fg-secondary mb-1">
+                  {provider === "google" ? "リージョン (Vertex AI 用):" : "デプロイメント名:"}
+                </label>
                 <input
                   type="text"
                   className="w-full bg-vsc-input-bg text-vsc-input-fg border border-vsc-input-border rounded-md px-2 py-1 text-xs outline-none focus:border-vsc-accent transition-colors"

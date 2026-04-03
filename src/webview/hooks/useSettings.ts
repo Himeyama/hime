@@ -13,6 +13,7 @@ export function useSettings() {
     "azure-openai": false,
     ollama: false,
     openrouter: false,
+    google: false,
   });
   const [connectionTestResult, setConnectionTestResult] = useState<{
     provider: ProviderType;
@@ -25,6 +26,7 @@ export function useSettings() {
     "azure-openai": [],
     ollama: [],
     openrouter: [],
+    google: [],
   });
   const [mcpStatus, setMcpStatus] = useState<{ name: string; status: "connected" | "disconnected" | "error"; toolCount: number }[]>([]);
 

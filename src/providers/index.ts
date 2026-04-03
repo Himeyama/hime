@@ -5,6 +5,7 @@ import { OpenAIProvider } from "./openai";
 import { AzureOpenAIProvider } from "./azure-openai";
 import { OllamaProvider } from "./ollama";
 import { OpenRouterProvider } from "./openrouter";
+import { GoogleProvider } from "./google";
 
 export function createProvider(config: ProviderConfig): AIProvider {
   switch (config.type) {
@@ -18,7 +19,9 @@ export function createProvider(config: ProviderConfig): AIProvider {
       return new OllamaProvider(config);
     case "openrouter":
       return new OpenRouterProvider(config);
+    case "google":
+      return new GoogleProvider(config);
   }
 }
 
-export { AnthropicProvider, OpenAIProvider, AzureOpenAIProvider, OllamaProvider, OpenRouterProvider };
+export { AnthropicProvider, OpenAIProvider, AzureOpenAIProvider, OllamaProvider, OpenRouterProvider, GoogleProvider };

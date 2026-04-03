@@ -500,6 +500,8 @@ class HimeChatViewProvider implements vscode.WebviewViewProvider {
   }
 
   private async handleTestConnection(providerType: ProviderType) {
+    outputChannel.appendLine(`\n${"=".repeat(60)}`);
+    outputChannel.appendLine(`[${new Date().toISOString()}] CONNECTION TEST: ${providerType}`);
     try {
       const settings = await settingsStorage.load();
       const apiKey = await this.context.secrets.get(`hime.apiKey.${providerType}`);
@@ -512,9 +514,33 @@ class HimeChatViewProvider implements vscode.WebviewViewProvider {
         model: providerSettings?.model || "default",
       });
 
+      outputChannel.appendLine(`endpoint: ${providerSettings?.endpoint ?? "(default)"}`);
+      outputChannel.appendLine(`model: ${providerSettings?.model ?? "default"}`);
+
       const success = await provider.testConnection();
+      outputChannel.appendLine(`result: OK`);
       this.sendToWebview({ type: "connectionTestResult", provider: providerType, success });
     } catch (err: any) {
+      outputChannel.appendLine(`result: FAILED`);
+      outputChannel.appendLine(`message: ${err.message || String(err)}`);
+      if (err.status !== undefined) {
+        outputChannel.appendLine(`status: ${err.status}`);
+      }
+      if (err.error) {
+        outputChannel.appendLine(`body: ${JSON.stringify(err.error, null, 2)}`);
+      }
+      if (err.headers) {
+        const relevant = ["x-request-id", "cf-ray", "x-ratelimit-remaining-requests"];
+        const picked = Object.fromEntries(
+          relevant.filter((k) => err.headers[k]).map((k) => [k, err.headers[k]])
+        );
+        if (Object.keys(picked).length > 0) {
+          outputChannel.appendLine(`headers: ${JSON.stringify(picked)}`);
+        }
+      }
+      if (err.stack) {
+        outputChannel.appendLine(`stack:\n${err.stack}`);
+      }
       this.sendToWebview({
         type: "connectionTestResult",
         provider: providerType,
@@ -554,6 +580,7 @@ class HimeChatViewProvider implements vscode.WebviewViewProvider {
       "azure-openai": !!(await this.context.secrets.get("hime.apiKey.azure-openai")),
       ollama: true,
       openrouter: !!(await this.context.secrets.get("hime.apiKey.openrouter")),
+      google: !!(await this.context.secrets.get("hime.apiKey.google")),
     };
     this.sendToWebview({ type: "settings", settings, hasApiKeys });
   }

@@ -26,6 +26,10 @@ function createDefaultSettings(): AppSettings {
       openrouter: {
         model: DEFAULT_MODELS.openrouter,
       },
+      google: {
+        model: DEFAULT_MODELS.google,
+        endpoint: "",
+      },
     },
     systemPrompt: "",
     mcpServers: {},
