@@ -63,6 +63,39 @@ export class GoogleProvider extends BaseProvider {
     return contents;
   }
 
+  // Gemini API が認識しない JSON Schema フィールドを再帰的に除去する
+  private sanitizeSchema(schema: any): any {
+    if (Array.isArray(schema)) {
+      return schema.map((item) => this.sanitizeSchema(item));
+    }
+    if (schema === null || typeof schema !== "object") {
+      return schema;
+    }
+
+    const unsupported = new Set([
+      "exclusiveMaximum",
+      "exclusiveMinimum",
+      "additionalProperties",
+      "$schema",
+      "$defs",
+      "definitions",
+      "const",
+      "if",
+      "then",
+      "else",
+      "not",
+      "contentEncoding",
+      "contentMediaType",
+    ]);
+
+    const result: any = {};
+    for (const [k, v] of Object.entries(schema)) {
+      if (unsupported.has(k)) continue;
+      result[k] = this.sanitizeSchema(v);
+    }
+    return result;
+  }
+
   private convertTools(tools: any[]): any[] | undefined {
     if (!tools || tools.length === 0) return undefined;
     return [
@@ -70,7 +103,7 @@ export class GoogleProvider extends BaseProvider {
         functionDeclarations: tools.map((t) => ({
           name: t.function.name,
           description: t.function.description || "",
-          parameters: t.function.parameters,
+          parameters: this.sanitizeSchema(t.function.parameters),
         })),
       },
     ];

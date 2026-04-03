@@ -49,6 +49,7 @@ export class ToolExecutor {
       case "azure-openai":
       case "openrouter":
       case "ollama":
+      case "google":
         return this.toOpenAITools();
       default:
         return undefined;
