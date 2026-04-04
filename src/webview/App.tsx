@@ -39,6 +39,8 @@ export function App() {
       ? "text-red-500"
       : "text-yellow-600";
 
+  const appFontClass = settingsHook.settings?.fontFamily === "sans-serif" ? "app-font-sans" : "app-font-serif";
+
   return (
     <div className="flex flex-col h-screen">
       {/* Header */}
@@ -80,7 +82,7 @@ export function App() {
         </div>
       </header>
 
-      {showSettings && (
+      {showSettings ? (
         <SettingsPanel
           settings={settingsHook.settings}
           hasApiKeys={settingsHook.hasApiKeys}
@@ -93,30 +95,33 @@ export function App() {
           onOpenSettingsJson={() => postMessage({ command: "openSettingsJson" })}
           onClose={() => setShowSettings(false)}
         />
+      ) : (
+        <>
+          <ChatList
+            chats={chat.chats}
+            currentChatId={chat.currentChat?.id || null}
+            onSelect={chat.loadChat}
+            onDelete={chat.deleteChat}
+          />
+
+          <ChatView
+            className={appFontClass}
+            chat={chat.currentChat}
+            isStreaming={chat.isStreaming}
+            streamingContent={chat.streamingContent}
+            streamingMessageId={chat.streamingMessageId}
+            streamingToolCalls={chat.streamingToolCalls}
+            error={chat.error}
+            loadedContextFiles={chat.loadedContextFiles}
+            selectedProvider={selectedProvider}
+            onSendMessage={(content) => chat.sendMessage(content, selectedProvider)}
+            onProviderChange={handleProviderChange}
+            onClearContext={chat.clearContext}
+            onCompressContext={chat.compressContext}
+            onAbortStream={chat.abortStream}
+          />
+        </>
       )}
-
-      <ChatList
-        chats={chat.chats}
-        currentChatId={chat.currentChat?.id || null}
-        onSelect={chat.loadChat}
-        onDelete={chat.deleteChat}
-      />
-
-      <ChatView
-        chat={chat.currentChat}
-        isStreaming={chat.isStreaming}
-        streamingContent={chat.streamingContent}
-        streamingMessageId={chat.streamingMessageId}
-        streamingToolCalls={chat.streamingToolCalls}
-        error={chat.error}
-        loadedContextFiles={chat.loadedContextFiles}
-        selectedProvider={selectedProvider}
-        onSendMessage={(content) => chat.sendMessage(content, selectedProvider)}
-        onProviderChange={handleProviderChange}
-        onClearContext={chat.clearContext}
-        onCompressContext={chat.compressContext}
-        onAbortStream={chat.abortStream}
-      />
     </div>
   );
 }

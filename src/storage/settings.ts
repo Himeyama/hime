@@ -32,6 +32,7 @@ function createDefaultSettings(): AppSettings {
       },
     },
     systemPrompt: "",
+    fontFamily: "serif",
     mcpServers: {},
   };
 }
@@ -62,6 +63,9 @@ export class SettingsStorage {
       // Ensure mcpServers exists
       if (!settings.mcpServers) {
         settings.mcpServers = {};
+      }
+      if (!settings.fontFamily) {
+        settings.fontFamily = "serif";
       }
       return settings;
     } catch {

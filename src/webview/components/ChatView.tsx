@@ -5,6 +5,7 @@ import { InputArea } from "./InputArea";
 import { ProviderSelect } from "./ProviderSelect";
 
 interface ChatViewProps {
+  className?: string;
   chat: Chat | null;
   isStreaming: boolean;
   streamingContent: string;
@@ -21,6 +22,7 @@ interface ChatViewProps {
 }
 
 export function ChatView({
+  className,
   chat,
   isStreaming,
   streamingContent,
@@ -37,7 +39,7 @@ export function ChatView({
 }: ChatViewProps) {
   if (!chat) {
     return (
-      <div className="flex items-center justify-center flex-1 text-vsc-fg-secondary px-6">
+      <div className={`flex items-center justify-center flex-1 text-vsc-fg-secondary px-6 ${className || ""}`}>
         <div className="text-center">
           <svg width="48" height="48" viewBox="0 0 48 48" fill="none" className="mx-auto mb-3 opacity-20" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
             <path d="M6 36V12a4 4 0 0 1 4-4h28a4 4 0 0 1 4 4v18a4 4 0 0 1-4 4H14l-8 6z" />
@@ -81,6 +83,7 @@ export function ChatView({
       )}
 
       <MessageList
+        className={className}
         messages={chat.messages}
         isStreaming={isStreaming}
         streamingContent={streamingContent}

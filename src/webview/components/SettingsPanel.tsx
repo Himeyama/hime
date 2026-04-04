@@ -77,7 +77,7 @@ export function SettingsPanel({
   };
 
   return (
-    <div className="border-b border-vsc-border bg-vsc-bg-secondary max-h-[60vh] overflow-y-auto p-3 scrollbar-thin animate-slide-down">
+    <div className="flex-1 bg-vsc-bg-secondary overflow-y-auto p-3 scrollbar-thin animate-slide-down">
       {/* ヘッダー */}
       <div className="flex justify-between items-center mb-3">
         <h2 className="text-sm font-semibold">設定</h2>
@@ -270,6 +270,18 @@ export function SettingsPanel({
             placeholder="カスタムシステムプロンプト"
             rows={4}
           />
+        </div>
+
+        <div className="mt-4">
+          <label className="block text-xs text-vsc-fg-secondary mb-1">フォント設定:</label>
+          <select
+            className="w-full bg-vsc-input-bg text-vsc-input-fg border border-vsc-input-border rounded-md px-2 py-1.5 text-xs outline-none focus:border-vsc-accent transition-colors"
+            value={settings.fontFamily || "serif"}
+            onChange={(e) => onUpdateSettings({ fontFamily: e.target.value as "serif" | "sans-serif" })}
+          >
+            <option value="sans-serif">サンセリフ</option>
+            <option value="serif">セリフ</option>
+          </select>
         </div>
 
         <div className="mt-4">

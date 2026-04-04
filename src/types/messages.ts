@@ -57,5 +57,6 @@ export interface AppSettings {
   defaultProvider: ProviderType;
   providers: Record<ProviderType, ProviderSettings>;
   systemPrompt: string;
+  fontFamily?: "serif" | "sans-serif";
   mcpServers?: Record<string, MCPServerSettingConfig>;
 }

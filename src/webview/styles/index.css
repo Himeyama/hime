@@ -49,6 +49,27 @@
   textarea:focus-visible {
     outline: none;
   }
+
+  .app-font-sans {
+    font-family: -apple-system, BlinkMacSystemFont, Roboto, "Helvetica Neue", Arial, "Noto Sans JP", sans-serif;
+  }
+
+  .app-font-serif {
+    font-family: Georgia, "Noto Serif JP", serif;
+  }
+
+  /* セリフ体の太字（日本語など）はゴシック体に */
+  .app-font-serif b, 
+  .app-font-serif strong, 
+  .app-font-serif h1, 
+  .app-font-serif h2, 
+  .app-font-serif h3, 
+  .app-font-serif h4, 
+  .app-font-serif h5, 
+  .app-font-serif h6, 
+  .app-font-serif th {
+    font-family: -apple-system, BlinkMacSystemFont, Roboto, "Helvetica Neue", Arial, "Noto Sans JP", sans-serif;
+  }
 }
 
 @layer components {

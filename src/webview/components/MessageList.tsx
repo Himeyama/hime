@@ -3,6 +3,7 @@ import { Message, ToolCall } from "../../types/chat";
 import { MessageBubble } from "./MessageBubble";
 
 interface MessageListProps {
+  className?: string;
   messages: Message[];
   isStreaming: boolean;
   streamingContent: string;
@@ -11,6 +12,7 @@ interface MessageListProps {
 }
 
 export function MessageList({
+  className,
   messages,
   isStreaming,
   streamingContent,
@@ -34,7 +36,7 @@ export function MessageList({
   }, [visibleMessages, streamingContent]);
 
   return (
-    <div className="flex-1 overflow-y-auto px-3 py-4 space-y-4 scrollbar-thin scroll-smooth">
+    <div className={`flex-1 overflow-y-auto px-3 py-4 space-y-4 scrollbar-thin scroll-smooth ${className || ""}`}>
       {visibleMessages.map((msg) => (
         <MessageBubble
           key={msg.id}
