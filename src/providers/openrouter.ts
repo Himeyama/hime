@@ -23,7 +23,12 @@ export class OpenRouterProvider extends BaseProvider {
     systemPrompt: string
   ): OpenAI.ChatCompletionMessageParam[] {
     const result: OpenAI.ChatCompletionMessageParam[] = [
-      { role: "system", content: systemPrompt },
+      {
+        role: "system",
+        content: [
+          { type: "text", text: systemPrompt, cache_control: { type: "ephemeral" } } as any,
+        ],
+      },
     ];
 
     for (const m of messages) {

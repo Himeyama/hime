@@ -89,9 +89,22 @@ export class AnthropicProvider extends BaseProvider {
       const stream = client.messages.stream({
         model: this.config.model,
         max_tokens: this.config.maxTokens || 8192,
-        system: systemPrompt,
+        system: [
+          {
+            type: "text",
+            text: systemPrompt,
+            cache_control: { type: "ephemeral" },
+          },
+        ],
         messages: currentMessages,
-        tools: tools,
+        tools:
+          tools && tools.length > 0
+            ? tools.map((t: any, i: number) =>
+                i === tools.length - 1
+                  ? { ...t, cache_control: { type: "ephemeral" } }
+                  : t
+              )
+            : tools,
       });
 
       if (signal) {
