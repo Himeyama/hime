@@ -2,7 +2,7 @@ import * as crypto from "crypto";
 import { Ollama } from "ollama";
 import { BaseProvider } from "./base";
 import { ProviderConfig, SystemPrompt } from "../types/provider";
-import { Message, ProviderType, ToolCall } from "../types/chat";
+import { Message, ProviderType, ToolCall, TokenUsage } from "../types/chat";
 
 export class OllamaProvider extends BaseProvider {
   readonly type: ProviderType = "ollama";
@@ -66,6 +66,7 @@ export class OllamaProvider extends BaseProvider {
     const allToolCalls: ToolCall[] = [];
     let iteration = 0;
     const maxIterations = 10;
+    const totalUsage: TokenUsage = { inputTokens: 0, outputTokens: 0 };
 
     while (iteration < maxIterations) {
       iteration++;
@@ -82,6 +83,11 @@ export class OllamaProvider extends BaseProvider {
 
       for await (const chunk of stream) {
         if (signal?.aborted) break;
+
+        if (chunk.done) {
+          totalUsage.inputTokens += (chunk as any).prompt_eval_count ?? 0;
+          totalUsage.outputTokens += (chunk as any).eval_count ?? 0;
+        }
 
         if (chunk.message?.content) {
           currentIterationContent += chunk.message.content;
@@ -140,7 +146,8 @@ export class OllamaProvider extends BaseProvider {
 
     return this.createAssistantMessage(
       fullContent,
-      allToolCalls.length > 0 ? allToolCalls : undefined
+      allToolCalls.length > 0 ? allToolCalls : undefined,
+      totalUsage
     );
   }
 

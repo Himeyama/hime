@@ -1,6 +1,6 @@
 import * as crypto from "crypto";
 import { AIProvider, ProviderConfig, SystemPrompt } from "../types/provider";
-import { Message, ProviderType, ToolCall } from "../types/chat";
+import { Message, ProviderType, ToolCall, TokenUsage } from "../types/chat";
 
 export abstract class BaseProvider implements AIProvider {
   abstract readonly type: ProviderType;
@@ -34,7 +34,8 @@ export abstract class BaseProvider implements AIProvider {
 
   protected createAssistantMessage(
     content: string,
-    toolCalls?: ToolCall[]
+    toolCalls?: ToolCall[],
+    usage?: TokenUsage
   ): Message {
     return {
       id: crypto.randomUUID(),
@@ -44,6 +45,7 @@ export abstract class BaseProvider implements AIProvider {
       model: this.config.model,
       timestamp: new Date().toISOString(),
       toolCalls,
+      usage,
     };
   }
 }

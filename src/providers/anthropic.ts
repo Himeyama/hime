@@ -1,7 +1,7 @@
 import Anthropic from "@anthropic-ai/sdk";
 import { BaseProvider } from "./base";
 import { SystemPrompt } from "../types/provider";
-import { Message, ProviderType, ToolCall } from "../types/chat";
+import { Message, ProviderType, ToolCall, TokenUsage } from "../types/chat";
 
 export class AnthropicProvider extends BaseProvider {
   readonly type: ProviderType = "anthropic";
@@ -80,6 +80,7 @@ export class AnthropicProvider extends BaseProvider {
     const allToolCalls: ToolCall[] = [];
     let iteration = 0;
     const maxIterations = 10;
+    const totalUsage: TokenUsage = { inputTokens: 0, outputTokens: 0, cacheReadTokens: 0, cacheWriteTokens: 0 };
 
     while (iteration < maxIterations) {
       iteration++;
@@ -115,6 +116,17 @@ export class AnthropicProvider extends BaseProvider {
 
       for await (const event of stream) {
         if (signal?.aborted) break;
+
+        if (event.type === "message_start") {
+          const u = event.message.usage;
+          totalUsage.inputTokens += u.input_tokens ?? 0;
+          totalUsage.cacheReadTokens = (totalUsage.cacheReadTokens ?? 0) + ((u as any).cache_read_input_tokens ?? 0);
+          totalUsage.cacheWriteTokens = (totalUsage.cacheWriteTokens ?? 0) + ((u as any).cache_creation_input_tokens ?? 0);
+        }
+
+        if (event.type === "message_delta" && (event as any).usage) {
+          totalUsage.outputTokens += (event as any).usage.output_tokens ?? 0;
+        }
 
         if (event.type === "content_block_delta" && event.delta.type === "text_delta") {
           currentIterationContent += event.delta.text;
@@ -200,7 +212,7 @@ export class AnthropicProvider extends BaseProvider {
       currentMessages.push({ role: "user", content: toolResultBlocks });
     }
 
-    return this.createAssistantMessage(fullContent, allToolCalls.length > 0 ? allToolCalls : undefined);
+    return this.createAssistantMessage(fullContent, allToolCalls.length > 0 ? allToolCalls : undefined, totalUsage);
   }
 
   async listModels(): Promise<string[]> {

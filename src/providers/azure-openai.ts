@@ -1,7 +1,7 @@
 import OpenAI from "openai";
 import { BaseProvider } from "./base";
 import { SystemPrompt } from "../types/provider";
-import { Message, ProviderType, ToolCall } from "../types/chat";
+import { Message, ProviderType, ToolCall, TokenUsage } from "../types/chat";
 
 export class AzureOpenAIProvider extends BaseProvider {
   readonly type: ProviderType = "azure-openai";
@@ -83,6 +83,7 @@ export class AzureOpenAIProvider extends BaseProvider {
     const allToolCalls: ToolCall[] = [];
     let iteration = 0;
     const maxIterations = 10;
+    const totalUsage: TokenUsage = { inputTokens: 0, outputTokens: 0 };
 
     while (iteration < maxIterations) {
       iteration++;
@@ -96,6 +97,7 @@ export class AzureOpenAIProvider extends BaseProvider {
           max_completion_tokens: this.config.maxTokens || 8192,
           messages: currentMessages,
           stream: true,
+          stream_options: { include_usage: true },
           tools: tools,
         },
         { signal }
@@ -103,6 +105,11 @@ export class AzureOpenAIProvider extends BaseProvider {
 
       for await (const chunk of stream) {
         if (signal?.aborted) break;
+
+        if (chunk.usage) {
+          totalUsage.inputTokens += chunk.usage.prompt_tokens ?? 0;
+          totalUsage.outputTokens += chunk.usage.completion_tokens ?? 0;
+        }
 
         const delta = chunk.choices[0]?.delta;
         if (!delta) continue;
@@ -199,7 +206,8 @@ export class AzureOpenAIProvider extends BaseProvider {
 
     return this.createAssistantMessage(
       fullContent,
-      allToolCalls.length > 0 ? allToolCalls : undefined
+      allToolCalls.length > 0 ? allToolCalls : undefined,
+      totalUsage
     );
   }
 

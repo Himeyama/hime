@@ -8,7 +8,7 @@ import {
 } from "@google/genai";
 import { BaseProvider } from "./base";
 import { SystemPrompt } from "../types/provider";
-import { Message, ProviderType, ToolCall } from "../types/chat";
+import { Message, ProviderType, ToolCall, TokenUsage } from "../types/chat";
 
 // 認証方法:
 //   Gemini Developer API: apiKey に Google AI Studio のキーを設定
@@ -127,6 +127,7 @@ export class GoogleProvider extends BaseProvider {
     const allToolCalls: ToolCall[] = [];
     let iteration = 0;
     const maxIterations = 10;
+    const totalUsage: TokenUsage = { inputTokens: 0, outputTokens: 0 };
 
     while (iteration < maxIterations) {
       iteration++;
@@ -144,8 +145,13 @@ export class GoogleProvider extends BaseProvider {
         },
       });
 
+      let lastUsageMetadata: any = null;
       for await (const chunk of stream) {
         if (signal?.aborted) break;
+
+        if (chunk.usageMetadata) {
+          lastUsageMetadata = chunk.usageMetadata;
+        }
 
         if (chunk.text) {
           currentIterationContent += chunk.text;
@@ -166,6 +172,11 @@ export class GoogleProvider extends BaseProvider {
             });
           }
         }
+      }
+
+      if (lastUsageMetadata) {
+        totalUsage.inputTokens += lastUsageMetadata.promptTokenCount ?? 0;
+        totalUsage.outputTokens += lastUsageMetadata.candidatesTokenCount ?? 0;
       }
 
       allToolCalls.push(...currentIterationToolCalls);
@@ -207,7 +218,8 @@ export class GoogleProvider extends BaseProvider {
 
     return this.createAssistantMessage(
       fullContent,
-      allToolCalls.length > 0 ? allToolCalls : undefined
+      allToolCalls.length > 0 ? allToolCalls : undefined,
+      totalUsage
     );
   }
 

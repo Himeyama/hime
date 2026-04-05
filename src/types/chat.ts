@@ -8,6 +8,13 @@ export interface Chat {
   systemPrompt?: string;
 }
 
+export interface TokenUsage {
+  inputTokens: number;
+  outputTokens: number;
+  cacheReadTokens?: number;
+  cacheWriteTokens?: number;
+}
+
 export interface Message {
   id: string;
   role: "user" | "assistant" | "system";
@@ -19,6 +26,7 @@ export interface Message {
   toolCalls?: ToolCall[];
   reactions?: Reaction[];
   contextClearMark?: boolean;
+  usage?: TokenUsage;
 }
 
 export interface Attachment {

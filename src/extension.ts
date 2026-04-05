@@ -403,6 +403,15 @@ class HimeChatViewProvider implements vscode.WebviewViewProvider {
 
       assistantMessage.content = finalAssistantMessage.content;
       assistantMessage.toolCalls = finalAssistantMessage.toolCalls;
+      assistantMessage.usage = finalAssistantMessage.usage;
+
+      if (finalAssistantMessage.usage) {
+        const u = finalAssistantMessage.usage;
+        const parts = [`input=${u.inputTokens}`, `output=${u.outputTokens}`];
+        if (u.cacheReadTokens) parts.push(`cache_read=${u.cacheReadTokens}`);
+        if (u.cacheWriteTokens) parts.push(`cache_write=${u.cacheWriteTokens}`);
+        outputChannel.appendLine(`[tokens] ${parts.join("  ")}`);
+      }
       
       if (!chat.messages.find(m => m.id === messageId)) {
         chat.messages.push(assistantMessage);
