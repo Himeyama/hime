@@ -20,9 +20,12 @@ function StatusIcon({ status }: { status: string }) {
 
 
 export function ToolCallView({ toolCall }: ToolCallViewProps) {
+  const [isExpanded, setIsExpanded] = useState(false);
   const isError = toolCall.status === "error";
   const result = toolCall.error || toolCall.result;
   const hasArgs = Object.keys(toolCall.arguments).length > 0;
+  const argsJson = JSON.stringify(toolCall.arguments, null, 2);
+  const isLongArgs = argsJson.length > 100 || argsJson.includes("\n");
 
   return (
     <div className="my-3 animate-fade-in border-l-2 border-vsc-border/30 pl-3">
@@ -32,11 +35,24 @@ export function ToolCallView({ toolCall }: ToolCallViewProps) {
           <span className="text-[11px] font-vsc font-bold text-vsc-fg-secondary uppercase tracking-wider">
             {toolCall.name}
           </span>
+          {hasArgs && isLongArgs && (
+            <button 
+              onClick={() => setIsExpanded(!isExpanded)}
+              className="text-[10px] text-vsc-accent hover:underline bg-transparent border-none p-0 cursor-pointer ml-auto"
+            >
+              {isExpanded ? "閉じる" : "引数を表示"}
+            </button>
+          )}
         </div>
         
         {hasArgs && (
-          <div className="text-[11px] text-vsc-fg/70 font-vsc-editor pl-3.5 py-1 bg-vsc-bg-secondary/10 rounded-sm italic truncate" title={JSON.stringify(toolCall.arguments, null, 2)}>
-            {JSON.stringify(toolCall.arguments)}
+          <div 
+            className={`text-[11px] text-vsc-fg/70 font-vsc-editor pl-3.5 py-1 bg-vsc-bg-secondary/10 rounded-sm ${
+              isExpanded ? "whitespace-pre-wrap overflow-auto max-h-[200px]" : "truncate"
+            }`}
+            title={!isExpanded ? argsJson : undefined}
+          >
+            {isExpanded ? argsJson : JSON.stringify(toolCall.arguments)}
           </div>
         )}
       </div>
