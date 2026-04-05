@@ -30,8 +30,7 @@ export const BUILTIN_TOOL_NAMES = new Set([
   "Edit",
   "Glob",
   "Grep",
-  "Bash",
-  "PowerShell",
+  IS_WINDOWS ? "PowerShell" : "Bash",
   "WebFetch",
   // Legacy names for compatibility
   "read_file",

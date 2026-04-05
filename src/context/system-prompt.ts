@@ -93,12 +93,28 @@ export function buildSystemPromptParts(params: Params): { staticPart: string; dy
       (model ? `| Model | ${model} |\n` : "")
   );
 
+  const shellInstructions =
+    platform === "win32"
+      ? `- Use the **PowerShell** tool for all terminal operations.\n` +
+        `- PowerShell 7+ (pwsh) conventions:\n` +
+        `  - Pipeline chain operators && and || are supported.\n` +
+        `  - Variables use $ prefix: $myVar = "value".\n` +
+        `  - Escape character is backtick (\`), not backslash.\n` +
+        `  - Environment variables: $env:NAME.\n` +
+        `  - Never use interactive prompts (Read-Host, etc.).\n` +
+        `  - Use -Confirm:$false for destructive cmdlets.`
+      : `- Use the **Bash** tool for all terminal operations.\n` +
+        `- Bash conventions:\n` +
+        `  - Always quote file paths with spaces.\n` +
+        `  - Use && to chain commands sequentially.\n` +
+        `  - Use ; only if you don't care about earlier command failures.`;
+
   // Session-Specific Guidance
   dynamicSections.push(
     `## Session-Specific Guidance\n` +
       `- If you do not understand why the user denied a tool execution confirmation, ask them.\n` +
       `- For simple, directed codebase searches (e.g., finding a specific file/class/function), use Glob or Grep directly.\n` +
-      `- Use ${shell} commands for all terminal operations.`
+      shellInstructions
   );
 
   // Active file path hint
