@@ -22,14 +22,23 @@ function StatusIcon({ status }: { status: string }) {
 export function ToolCallView({ toolCall }: ToolCallViewProps) {
   const isError = toolCall.status === "error";
   const result = toolCall.error || toolCall.result;
+  const hasArgs = Object.keys(toolCall.arguments).length > 0;
 
   return (
     <div className="my-3 animate-fade-in border-l-2 border-vsc-border/30 pl-3">
-      <div className="flex items-center gap-2 mb-1.5">
-        <StatusIcon status={toolCall.status} />
-        <span className="text-[11px] font-bold text-vsc-fg-secondary uppercase tracking-wider">
-          {toolCall.name}
-        </span>
+      <div className="flex flex-col gap-1 mb-1.5">
+        <div className="flex items-center gap-2">
+          <StatusIcon status={toolCall.status} />
+          <span className="text-[11px] font-vsc font-bold text-vsc-fg-secondary uppercase tracking-wider">
+            {toolCall.name}
+          </span>
+        </div>
+        
+        {hasArgs && (
+          <div className="text-[11px] text-vsc-fg/70 font-vsc-editor pl-3.5 py-1 bg-vsc-bg-secondary/10 rounded-sm italic truncate" title={JSON.stringify(toolCall.arguments, null, 2)}>
+            {JSON.stringify(toolCall.arguments)}
+          </div>
+        )}
       </div>
       
       {result && (
