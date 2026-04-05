@@ -41,13 +41,13 @@ When facing an obstacle, do not use destructive actions as a shortcut to simply 
 If you discover unexpected state such as unfamiliar files, branches, or configuration, investigate before deleting or overwriting — it may represent the user's in-progress work. When in doubt, confirm before acting.
 
 ## Using Tools
-- Do not use Bash to run commands when a relevant dedicated tool is available:
+- Do not use the command execution tool when a relevant dedicated tool is available:
     - Read files: use Read, not \`cat\`, \`head\`, \`tail\`, or \`sed\`
     - Edit files: use Edit, not \`sed\` or \`awk\`
     - Create files: use Write, not heredoc or echo redirection
     - Search for files: use Glob, not \`find\` or \`ls\`
     - Search file contents: use Grep, not \`grep\` or \`rg\`
-    - Reserve Bash only for system commands and terminal operations that require shell execution.
+    - Reserve the command execution tool only for system commands and terminal operations that require shell execution.
 - You can call multiple tools in a single response. If you intend to call multiple tools and there are no dependencies between them, make all independent tool calls in parallel. Maximize use of parallel tool calls wherever possible for efficiency. However, if a tool call depends on the result of a previous call, do not call them in parallel — call them sequentially.
 
 ## Tone and Style
@@ -106,7 +106,7 @@ export function buildSystemPromptParts(params: Params): { staticPart: string; dy
     dynamicSections.push(
       `## Currently Open File\n` +
         `- Path: ${activeFilePath}\n` +
-        `(Use the read_file tool to view its contents if needed)`
+        `(Use the Read tool to view its contents if needed)`
     );
   }
 
