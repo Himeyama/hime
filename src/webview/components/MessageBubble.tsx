@@ -65,23 +65,11 @@ export function MessageBubble({ message, isStreaming, streamingContent, streamin
                   }
                   
                   // Inline code
-                  const codeStrRaw = String(children);
-                  try {
-                    const highlighted = hljs.highlightAuto(codeStrRaw).value;
-                    return (
-                      <code
-                        className="inline-code hljs !bg-vsc-bg-secondary/40"
-                        dangerouslySetInnerHTML={{ __html: highlighted }}
-                        {...props}
-                      />
-                    );
-                  } catch {
-                    return (
-                      <code className="inline-code" {...props}>
-                        {children}
-                      </code>
-                    );
-                  }
+                  return (
+                    <code className="inline-code" {...props}>
+                      {children}
+                    </code>
+                  );
                 },
                 pre({ children }) {
                   // If children is already a CodeBlock (from code component), render directly
