@@ -42,31 +42,31 @@ export function getBuiltinToolDefinitions(): MCPTool[] {
   const tools: MCPTool[] = [
     {
       name: "Read",
-      description: `Reads a file from the local filesystem.
+      description: `Reads the content of a file from the local filesystem.
 
-Usage:
-- The file_path parameter must be an absolute path, not a relative path
-- By default, it reads up to ${MAX_READ_LINES} lines starting from the beginning of the file
-- When you already know which part of the file you need, only read that part
-- Results are returned using cat -n format, with line numbers starting at 1
-- It is okay to read a file that does not exist; an error will be returned`,
+Key Features & Constraints:
+- Output is returned in \`cat -n\` format (line numbers starting at 1, tab-separated).
+- Reads up to ${MAX_READ_LINES} lines by default.
+- For large files, use 'offset' and 'limit' to read specific segments.
+- Returns an error message if the file does not exist.`,
       inputSchema: {
         type: "object",
         properties: {
           file_path: {
             type: "string",
-            description: "The absolute path to the file to read",
+            description: "The absolute path to the file to read.",
           },
           offset: {
             type: "integer",
-            description:
-              "The line number to start reading from (1-indexed). Only provide if the file is too large to read at once.",
+            description: "The line number to start reading from (1-indexed). Defaults to 1.",
             minimum: 1,
+            default: 1,
           },
           limit: {
             type: "integer",
-            description: "The number of lines to read. Only provide if the file is too large to read at once.",
+            description: `The number of lines to read. Maximum ${MAX_READ_LINES} per call.`,
             exclusiveMinimum: 0,
+            default: MAX_READ_LINES,
           },
         },
         required: ["file_path"],
@@ -74,22 +74,22 @@ Usage:
     },
     {
       name: "Write",
-      description: `Writes a file to the local filesystem.
+      description: `Creates a new file or overwrites an existing one at the specified path.
 
-Usage:
-- This tool will overwrite the existing file if there is one at the provided path.
-- Prefer the Edit tool for modifying existing files — it only sends the diff.
-- Only use this tool to create new files or for complete rewrites.`,
+Key Features & Constraints:
+- Automatically creates parent directories if they do not exist.
+- Overwrites existing files without warning.
+- For partial modifications of existing files, the 'Edit' tool is preferred to minimize data transfer.`,
       inputSchema: {
         type: "object",
         properties: {
           file_path: {
             type: "string",
-            description: "The absolute path to the file to write (must be absolute, not relative)",
+            description: "The absolute path where the file will be written.",
           },
           content: {
             type: "string",
-            description: "The content to write to the file",
+            description: "The full content to be written to the file.",
           },
         },
         required: ["file_path", "content"],
@@ -97,29 +97,30 @@ Usage:
     },
     {
       name: "Edit",
-      description: `Performs exact string replacements in files.
+      description: `Performs string replacement within a file.
 
-Usage:
-- The edit will FAIL if old_string is not unique in the file. Either provide a larger string with more surrounding context to make it unique or use replace_all to change every instance of old_string.
-- Use replace_all for replacing and renaming strings across the file.`,
+Key Features & Constraints:
+- By default, 'old_string' MUST be unique within the file. If multiple occurrences exist, the tool will fail unless 'replace_all' is set to true.
+- 'old_string' must match the file content exactly, including indentation, whitespace, and newlines.
+- Successfully saves the file after replacement.`,
       inputSchema: {
         type: "object",
         properties: {
           file_path: {
             type: "string",
-            description: "The absolute path to the file to modify",
+            description: "The absolute path to the file to modify.",
           },
           old_string: {
             type: "string",
-            description: "The text to replace",
+            description: "The exact text to be replaced. Must be unique unless replace_all is true.",
           },
           new_string: {
             type: "string",
-            description: "The text to replace it with (must be different from old_string)",
+            description: "The new text to replace the old_string with.",
           },
           replace_all: {
             type: "boolean",
-            description: "Replace all occurrences of old_string (default false)",
+            description: "Whether to replace all occurrences of old_string. Defaults to false.",
             default: false,
           },
         },
@@ -128,21 +129,22 @@ Usage:
     },
     {
       name: "Glob",
-      description: `Fast file pattern matching tool that works with any codebase size.
-- Supports glob patterns like "**/*.js" or "src/**/*.ts"
-- Returns matching file paths sorted by modification time
-- Use this tool when you need to find files by name patterns`,
+      description: `Finds files matching a glob pattern.
+
+Key Features & Constraints:
+- Supports standard globbing patterns like '**/*.js' or 'src/**/*.ts'.
+- Results are sorted by file modification time in descending order (newest first).
+- Standard ignore directories like node_modules and .git are automatically skipped.`,
       inputSchema: {
         type: "object",
         properties: {
           pattern: {
             type: "string",
-            description: "The glob pattern to match files against",
+            description: "The glob pattern to match (e.g., '**/*.ts').",
           },
           path: {
             type: "string",
-            description:
-              "The directory to search in. If not specified, the workspace root will be used. Must be a valid directory path if provided.",
+            description: "The base directory to start the search. Defaults to the workspace root.",
           },
         },
         required: ["pattern"],
@@ -150,73 +152,65 @@ Usage:
     },
     {
       name: "Grep",
-      description: `A powerful search tool for file contents.
-- Supports full regex syntax (e.g., "log.*Error", "function\\s+\\w+")
-- Filter files with glob parameter (e.g., "*.js", "**/*.tsx") or type parameter (e.g., "js", "py", "ts")
-- Output modes: "content" shows matching lines (default), "files_with_matches" shows only file paths, "count" shows match counts
-- Multiline matching: By default patterns match within single lines only. For cross-line patterns, use multiline: true`,
+      description: `Searches for a regex pattern within file contents.
+
+Key Features & Constraints:
+- Supports full regular expression syntax.
+- 'output_mode' controls the result format: matching lines ('content'), file paths only ('files_with_matches'), or match counts ('count').
+- Supports context lines (-A, -B, -C) when output_mode is 'content'.
+- Allows filtering by file type (e.g., 'ts', 'js', 'py') or glob patterns.
+- Returns up to ${MAX_RESULTS} results by default.`,
       inputSchema: {
         type: "object",
         properties: {
           pattern: {
             type: "string",
-            description: "The regular expression pattern to search for in file contents",
+            description: "The regular expression pattern to search for.",
           },
           path: {
             type: "string",
-            description: "File or directory to search in. Defaults to workspace root.",
+            description: "The file or directory to search in. Defaults to the workspace root.",
           },
           glob: {
             type: "string",
-            description: 'Glob pattern to filter files (e.g. "*.js", "*.{ts,tsx}")',
+            description: "A glob pattern to filter files (e.g., '*.js').",
           },
           output_mode: {
             type: "string",
             enum: ["content", "files_with_matches", "count"],
-            description:
-              '"content" shows matching lines, "files_with_matches" shows only file paths, "count" shows match counts. Defaults to "files_with_matches".',
+            description: "Format of the output. Defaults to 'files_with_matches'.",
+            default: "files_with_matches",
           },
           "-B": {
             type: "number",
-            description: 'Number of lines to show before each match. Requires output_mode: "content".',
+            description: "Number of lines to show before each match (only for 'content' mode).",
           },
           "-A": {
             type: "number",
-            description: 'Number of lines to show after each match. Requires output_mode: "content".',
+            description: "Number of lines to show after each match (only for 'content' mode).",
           },
           "-C": {
             type: "number",
-            description:
-              'Number of lines to show before and after each match. Requires output_mode: "content".',
-          },
-          context: {
-            type: "number",
-            description: 'Alias for -C. Requires output_mode: "content".',
-          },
-          "-n": {
-            type: "boolean",
-            description: 'Show line numbers in output. Requires output_mode: "content". Defaults to true.',
+            description: "Number of lines to show before and after each match.",
           },
           "-i": {
             type: "boolean",
-            description: "Case insensitive search.",
+            description: "Perform case-insensitive matching. Defaults to false.",
+            default: false,
           },
           type: {
             type: "string",
-            description:
-              "File type to search (e.g. js, py, ts, go, java). More efficient than glob for standard file types.",
+            description: "Filter by file type (e.g., 'ts', 'js'). More efficient than glob for common types.",
           },
           head_limit: {
             type: "number",
-            description: "Limit output to first N lines/entries. Defaults to 250. Pass 0 for unlimited.",
-          },
-          offset: {
-            type: "number",
-            description: "Skip first N lines/entries. Defaults to 0.",
+            description: `Maximum number of results to return. Defaults to ${MAX_RESULTS}. Use 0 for no limit.`,
+            default: MAX_RESULTS,
           },
           multiline: {
             type: "boolean",
-            description: "Enable multiline mode where . matches newlines and patterns can span lines. Default: false.",
+            description: "Allows the dot (.) to match newlines and patterns to span multiple lines. Defaults to false.",
+            default: false,
           },
         },
         required: ["pattern"],
@@ -225,31 +219,28 @@ Usage:
     IS_WINDOWS
       ? {
           name: "PowerShell",
-          description: `Executes a given PowerShell command and returns its output.
+          description: `Executes a PowerShell 7 (pwsh) command.
 
-IMPORTANT: Use this tool for terminal operations only. For file operations use Read, Write, Edit, Glob, Grep instead.
-
-PowerShell 7+ (pwsh):
-- Pipeline chain operators && and || work like bash
-- Variables use $ prefix: $myVar = "value"
-- Escape character is backtick (\`), not backslash
-- Environment variables: $env:NAME
-- Never use interactive prompts (Read-Host, Get-Credential, etc.)
-- Use -Confirm:$false for destructive cmdlets`,
+Key Features & Constraints:
+- Maximum execution timeout is 10 minutes (default 2 minutes).
+- Captures up to ${MAX_OUTPUT_CHARS} characters of combined stdout and stderr.
+- Runs in non-interactive mode; commands requiring user input (e.g., Read-Host) will fail or hang.
+- For file operations, prefer using specialized tools like Read, Write, Edit, Glob, and Grep.`,
           inputSchema: {
             type: "object",
             properties: {
               command: {
                 type: "string",
-                description: "The PowerShell command to execute",
+                description: "The PowerShell command to execute.",
               },
               timeout: {
                 type: "number",
-                description: "Optional timeout in milliseconds (max 600000)",
+                description: "Execution timeout in milliseconds. Max 600,000 (10 mins).",
+                default: 120000,
               },
               description: {
                 type: "string",
-                description: "Clear, concise description of what this command does",
+                description: "A brief description of what the command does.",
               },
             },
             required: ["command"],
@@ -257,27 +248,28 @@ PowerShell 7+ (pwsh):
         }
       : {
           name: "Bash",
-          description: `Executes a given bash command and returns its output.
+          description: `Executes a Bash command.
 
-IMPORTANT: Use this tool for terminal operations only. For file operations use Read, Write, Edit, Glob, Grep instead.
-
-- Always quote file paths that contain spaces
-- Use && to chain commands that must run sequentially
-- Use ; only when you don't care if earlier commands fail`,
+Key Features & Constraints:
+- Maximum execution timeout is 10 minutes (default 2 minutes).
+- Captures up to ${MAX_OUTPUT_CHARS} characters of combined stdout and stderr.
+- Runs in non-interactive mode.
+- For file operations, prefer using specialized tools like Read, Write, Edit, Glob, and Grep.`,
           inputSchema: {
             type: "object",
             properties: {
               command: {
                 type: "string",
-                description: "The bash command to execute",
+                description: "The Bash command to execute.",
               },
               timeout: {
                 type: "number",
-                description: "Optional timeout in milliseconds (max 600000)",
+                description: "Execution timeout in milliseconds. Max 600,000 (10 mins).",
+                default: 120000,
               },
               description: {
                 type: "string",
-                description: "Clear, concise description of what this command does",
+                description: "A brief description of what the command does.",
               },
             },
             required: ["command"],
@@ -285,21 +277,23 @@ IMPORTANT: Use this tool for terminal operations only. For file operations use R
         },
     {
       name: "WebFetch",
-      description: `Fetches content from a specified URL.
-- Fetches the URL content and converts HTML to plain text
-- Returns the page content as text
-- Use this when you need to retrieve web content`,
+      description: `Fetches content from a URL and converts HTML to plain text.
+
+Key Features & Constraints:
+- Does not execute JavaScript (static HTML only).
+- Redirects (3xx) are not followed automatically; the tool returns the redirect URL instead.
+- Content is truncated at ${MAX_OUTPUT_CHARS} characters.`,
       inputSchema: {
         type: "object",
         properties: {
           url: {
             type: "string",
-            description: "The URL to fetch content from",
+            description: "The URL to fetch content from.",
             format: "uri",
           },
           prompt: {
             type: "string",
-            description: "What specific information you want to extract from the page",
+            description: "A hint about what specific information to extract from the page.",
           },
         },
         required: ["url"],
