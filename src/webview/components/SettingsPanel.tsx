@@ -285,6 +285,32 @@ export function SettingsPanel({
         </div>
 
         <div className="mt-4">
+          <label className="flex items-center gap-2 cursor-pointer select-none">
+            <div className="relative">
+              <input
+                type="checkbox"
+                className="sr-only"
+                checked={settings.autoLoadProjectFiles !== false}
+                onChange={(e) => onUpdateSettings({ autoLoadProjectFiles: e.target.checked })}
+              />
+              <div
+                className={`w-8 h-4 rounded-full transition-colors ${
+                  settings.autoLoadProjectFiles !== false ? "bg-vsc-accent" : "bg-vsc-border"
+                }`}
+              />
+              <div
+                className={`absolute top-0.5 left-0.5 w-3 h-3 bg-white rounded-full shadow transition-transform ${
+                  settings.autoLoadProjectFiles !== false ? "translate-x-4" : ""
+                }`}
+              />
+            </div>
+            <span className="text-xs text-vsc-fg-secondary">
+              CLAUDE.md / AGENTS.md / README.md を自動読み込み
+            </span>
+          </label>
+        </div>
+
+        <div className="mt-4">
           <div className="flex justify-between items-center mb-1">
             <label className="block text-xs text-vsc-fg-secondary">MCP Servers (JSON):</label>
             <button

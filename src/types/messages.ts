@@ -59,4 +59,5 @@ export interface AppSettings {
   systemPrompt: string;
   fontFamily?: "serif" | "sans-serif";
   mcpServers?: Record<string, MCPServerSettingConfig>;
+  autoLoadProjectFiles?: boolean;
 }

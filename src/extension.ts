@@ -281,7 +281,10 @@ class HimeChatViewProvider implements vscode.WebviewViewProvider {
 
     // Build system prompt
     const workspacePath = vscode.workspace.workspaceFolders?.[0]?.uri.fsPath || "";
-    const projectContext = await loadProjectContext();
+    const settings = await settingsStorage.load();
+    const projectContext = settings.autoLoadProjectFiles !== false
+      ? await loadProjectContext()
+      : {};
     const activeFilePath = activeEditorTracker.getContext()?.filePath;
 
     // Notify webview about loaded project context files
@@ -292,7 +295,6 @@ class HimeChatViewProvider implements vscode.WebviewViewProvider {
     if (loadedFiles.length > 0) {
       this.sendToWebview({ type: "projectContextLoaded", files: loadedFiles });
     }
-    const settings = await settingsStorage.load();
     const systemPrompt = buildSystemPromptParts({
       workspacePath,
       model: settings.providers[providerType]?.model,
