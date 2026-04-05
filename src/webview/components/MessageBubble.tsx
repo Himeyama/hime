@@ -38,6 +38,19 @@ export function MessageBubble({ message, isStreaming, streamingContent, streamin
           <ReactMarkdown
             remarkPlugins={[remarkGfm]}
             components={{
+              a({ children, href, ...props }) {
+                return (
+                  <a
+                    href={href}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className={isUser ? "text-vsc-accent-fg underline decoration-vsc-accent-fg/40 hover:decoration-vsc-accent-fg/80" : ""}
+                    {...props}
+                  >
+                    {children}
+                  </a>
+                );
+              },
               code({ className, children, ...props }) {
                 const match = /language-(\w+)/.exec(className || "");
                 const codeStr = String(children).replace(/\n$/, "");
