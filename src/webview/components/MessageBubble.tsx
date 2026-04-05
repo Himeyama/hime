@@ -1,6 +1,7 @@
 import React from "react";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
+import hljs from "highlight.js";
 import { Message, ToolCall } from "../../types/chat";
 import { CodeBlock } from "./CodeBlock";
 import { ToolCallView } from "./ToolCallView";
@@ -34,50 +35,68 @@ export function MessageBubble({ message, isStreaming, streamingContent, streamin
           <ToolCallView key={tc.id} toolCall={tc} />
         ))}
 
-        <div className={`markdown-body ${isUser ? "text-vsc-accent-fg" : ""}`}>
-          <ReactMarkdown
-            remarkPlugins={[remarkGfm]}
-            components={{
-              a({ children, href, ...props }) {
-                return (
-                  <a
-                    href={href}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className={isUser ? "text-vsc-accent-fg underline decoration-vsc-accent-fg/40 hover:decoration-vsc-accent-fg/80" : ""}
-                    {...props}
-                  >
-                    {children}
-                  </a>
-                );
-              },
-              code({ className, children, ...props }) {
-                const match = /language-(\w+)/.exec(className || "");
-                const codeStr = String(children).replace(/\n$/, "");
-                // Check if it's a block-level code (inside pre)
-                if (match) {
-                  return <CodeBlock language={match[1]} code={codeStr} />;
-                }
-                // Inline code
-                return (
-                  <code className="inline-code" {...props}>
-                    {children}
-                  </code>
-                );
-              },
-              pre({ children }) {
-                // If children is already a CodeBlock (from code component), render directly
-                const child = React.Children.toArray(children)[0];
-                if (React.isValidElement(child) && child.type === CodeBlock) {
-                  return <>{children}</>;
-                }
-                return <pre>{children}</pre>;
-              },
-            }}
-          >
+        {isUser ? (
+          <div className="whitespace-pre-wrap break-words">
             {content}
-          </ReactMarkdown>
-        </div>
+          </div>
+        ) : (
+          <div className="markdown-body">
+            <ReactMarkdown
+              remarkPlugins={[remarkGfm]}
+              components={{
+                a({ children, href, ...props }) {
+                  return (
+                    <a
+                      href={href}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      {...props}
+                    >
+                      {children}
+                    </a>
+                  );
+                },
+                code({ className, children, ...props }) {
+                  const match = /language-(\w+)/.exec(className || "");
+                  const codeStr = String(children).replace(/\n$/, "");
+                  // Check if it's a block-level code (inside pre)
+                  if (match) {
+                    return <CodeBlock language={match[1]} code={codeStr} />;
+                  }
+                  
+                  // Inline code
+                  const codeStrRaw = String(children);
+                  try {
+                    const highlighted = hljs.highlightAuto(codeStrRaw).value;
+                    return (
+                      <code
+                        className="inline-code hljs !bg-vsc-bg-secondary/40"
+                        dangerouslySetInnerHTML={{ __html: highlighted }}
+                        {...props}
+                      />
+                    );
+                  } catch {
+                    return (
+                      <code className="inline-code" {...props}>
+                        {children}
+                      </code>
+                    );
+                  }
+                },
+                pre({ children }) {
+                  // If children is already a CodeBlock (from code component), render directly
+                  const child = React.Children.toArray(children)[0];
+                  if (React.isValidElement(child) && child.type === CodeBlock) {
+                    return <>{children}</>;
+                  }
+                  return <pre>{children}</pre>;
+                },
+              }}
+            >
+              {content}
+            </ReactMarkdown>
+          </div>
+        )}
 
         {message.attachments?.map((att, i) =>
           att.type === "image" ? (
