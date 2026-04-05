@@ -20,6 +20,7 @@ export abstract class BaseProvider implements AIProvider {
     systemPrompt: SystemPrompt,
     onToken: (token: string) => void,
     onToolCall?: (toolCall: ToolCall) => Promise<string>,
+    onToolCallStart?: (toolCall: ToolCall) => void,
     signal?: AbortSignal,
     tools?: any[]
   ): Promise<Message>;

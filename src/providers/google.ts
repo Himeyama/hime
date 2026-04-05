@@ -115,6 +115,7 @@ export class GoogleProvider extends BaseProvider {
     systemPrompt: SystemPrompt,
     onToken: (token: string) => void,
     onToolCall?: (toolCall: ToolCall) => Promise<string>,
+    onToolCallStart?: (toolCall: ToolCall) => void,
     signal?: AbortSignal,
     tools?: any[]
   ): Promise<Message> {
@@ -164,12 +165,18 @@ export class GoogleProvider extends BaseProvider {
             const id = fc.id || crypto.randomUUID();
             if (seenIds.has(id)) continue;
             seenIds.add(id);
-            currentIterationToolCalls.push({
+            const toolCall: ToolCall = {
               id,
               name: fc.name || "",
               arguments: fc.args || {},
               status: "running",
-            });
+            };
+            currentIterationToolCalls.push(toolCall);
+            
+            // Notify start of tool call immediately
+            if (onToolCallStart) {
+              onToolCallStart(toolCall);
+            }
           }
         }
       }

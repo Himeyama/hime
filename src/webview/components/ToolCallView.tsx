@@ -8,11 +8,11 @@ interface ToolCallViewProps {
 function StatusIcon({ status }: { status: string }) {
   switch (status) {
     case "completed":
-      return <div className="w-1.5 h-1.5 rounded-full bg-vsc-success" />;
+      return <div className="w-1.5 h-1.5 rounded-full bg-vsc-success shadow-[0_0_4px_rgba(var(--vscode-testing-iconPassed),0.4)]" />;
     case "error":
-      return <div className="w-1.5 h-1.5 rounded-full bg-vsc-danger" />;
+      return <div className="w-1.5 h-1.5 rounded-full bg-vsc-danger shadow-[0_0_4px_rgba(var(--vscode-errorForeground),0.4)]" />;
     case "running":
-      return <div className="w-1.5 h-1.5 rounded-full bg-vsc-accent animate-pulse" />;
+      return <div className="w-1.5 h-1.5 rounded-full bg-vsc-accent animate-blink shadow-[0_0_6px_var(--vscode-button-background)]" />;
     default:
       return <div className="w-1.5 h-1.5 rounded-full bg-vsc-fg-secondary/30" />;
   }
@@ -21,6 +21,7 @@ function StatusIcon({ status }: { status: string }) {
 
 export function ToolCallView({ toolCall }: ToolCallViewProps) {
   const [isExpanded, setIsExpanded] = useState(false);
+  const isRunning = toolCall.status === "running";
   const isError = toolCall.status === "error";
   const result = toolCall.error || toolCall.result;
   const hasArgs = Object.keys(toolCall.arguments).length > 0;
@@ -57,11 +58,11 @@ export function ToolCallView({ toolCall }: ToolCallViewProps) {
         )}
       </div>
       
-      {result && (
+      {(result || isRunning) && (
         <div className={`text-[12px] p-2.5 rounded-lg border bg-vsc-bg-secondary/20 font-vsc-editor whitespace-pre-wrap overflow-auto max-h-[300px] scrollbar-thin ${
           isError ? "border-vsc-danger/20 text-vsc-danger/80" : "border-vsc-border/20 text-vsc-fg/80"
-        }`}>
-          {result}
+        } ${isRunning ? "animate-pulse-subtle italic text-vsc-fg-secondary/60" : ""}`}>
+          {isRunning ? "実行中..." : result}
         </div>
       )}
     </div>

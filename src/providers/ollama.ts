@@ -57,6 +57,7 @@ export class OllamaProvider extends BaseProvider {
     systemPrompt: SystemPrompt,
     onToken: (token: string) => void,
     onToolCall?: (toolCall: ToolCall) => Promise<string>,
+    onToolCallStart?: (toolCall: ToolCall) => void,
     signal?: AbortSignal,
     tools?: any[]
   ): Promise<Message> {
@@ -106,12 +107,17 @@ export class OllamaProvider extends BaseProvider {
       }
 
       for (const tc of streamedToolCalls) {
-        currentIterationToolCalls.push({
+        const toolCall: ToolCall = {
           id: crypto.randomUUID(),
           name: tc.name,
           arguments: tc.arguments,
           status: "running",
-        });
+        };
+        currentIterationToolCalls.push(toolCall);
+        
+        if (onToolCallStart) {
+          onToolCallStart(toolCall);
+        }
       }
 
       allToolCalls.push(...currentIterationToolCalls);

@@ -68,6 +68,7 @@ export class OpenAIProvider extends BaseProvider {
     systemPrompt: SystemPrompt,
     onToken: (token: string) => void,
     onToolCall?: (toolCall: ToolCall) => Promise<string>,
+    onToolCallStart?: (toolCall: ToolCall) => void,
     signal?: AbortSignal,
     tools?: any[]
   ): Promise<Message> {
@@ -150,6 +151,11 @@ export class OpenAIProvider extends BaseProvider {
           status: "running",
         };
         currentIterationToolCalls.push(toolCall);
+        
+        // Notify start of tool call immediately
+        if (onToolCallStart) {
+          onToolCallStart(toolCall);
+        }
       }
 
       allToolCalls.push(...currentIterationToolCalls);

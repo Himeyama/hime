@@ -357,15 +357,6 @@ class HimeChatViewProvider implements vscode.WebviewViewProvider {
           this.sendToWebview({ type: "token", chatId, messageId, content: token });
         },
         async (toolCall) => {
-          const tc: import("./types/chat").ToolCall = {
-            id: toolCall.id,
-            name: toolCall.name,
-            arguments: toolCall.arguments,
-            status: "running",
-          };
-          assistantMessage.toolCalls = [...(assistantMessage.toolCalls || []), tc];
-          this.sendToWebview({ type: "toolCall", chatId, messageId, toolCall: tc });
-
           try {
             const result = await toolExecutor.executeToolCall(toolCall);
             const updatedTc = assistantMessage.toolCalls?.find((t) => t.id === toolCall.id);
@@ -398,6 +389,16 @@ class HimeChatViewProvider implements vscode.WebviewViewProvider {
             });
             throw err;
           }
+        },
+        (toolCall) => {
+          const tc: import("./types/chat").ToolCall = {
+            id: toolCall.id,
+            name: toolCall.name,
+            arguments: toolCall.arguments,
+            status: "running",
+          };
+          assistantMessage.toolCalls = [...(assistantMessage.toolCalls || []), tc];
+          this.sendToWebview({ type: "toolCall", chatId, messageId, toolCall: tc });
         },
         currentAbortController.signal,
         toolExecutor.getToolsForProvider(providerType)

@@ -77,6 +77,7 @@ export class OpenRouterProvider extends BaseProvider {
     systemPrompt: SystemPrompt,
     onToken: (token: string) => void,
     onToolCall?: (toolCall: ToolCall) => Promise<string>,
+    onToolCallStart?: (toolCall: ToolCall) => void,
     signal?: AbortSignal,
     tools?: any[]
   ): Promise<Message> {
@@ -159,6 +160,10 @@ export class OpenRouterProvider extends BaseProvider {
           status: "running",
         };
         currentIterationToolCalls.push(toolCall);
+        
+        if (onToolCallStart) {
+          onToolCallStart(toolCall);
+        }
       }
 
       allToolCalls.push(...currentIterationToolCalls);
