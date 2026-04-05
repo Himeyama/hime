@@ -295,6 +295,7 @@ class HimeChatViewProvider implements vscode.WebviewViewProvider {
     const settings = await settingsStorage.load();
     const systemPrompt = buildSystemPrompt({
       workspacePath,
+      model: settings.providers[providerType]?.model,
       activeFile,
       projectContext,
       userSystemPrompt: settings.systemPrompt,
