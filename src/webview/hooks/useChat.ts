@@ -75,6 +75,8 @@ export function useChat() {
           break;
         case "toolCall":
           if (msg.chatId === chatId) {
+            setIsStreaming(true);
+            setStreamingMessageId(msg.messageId);
             setStreamingToolCalls((prev) => [...prev, msg.toolCall]);
           }
           break;
