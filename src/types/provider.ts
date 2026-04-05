@@ -1,5 +1,7 @@
 import { ProviderType, Message, ToolCall } from "./chat";
 
+export type SystemPrompt = string | { staticPart: string; dynamicPart: string };
+
 export interface ProviderConfig {
   type: ProviderType;
   apiKey?: string;
@@ -15,7 +17,7 @@ export interface AIProvider {
 
   chat(
     messages: Message[],
-    systemPrompt: string,
+    systemPrompt: SystemPrompt,
     onToken: (token: string) => void,
     onToolCall?: (toolCall: ToolCall) => Promise<string>,
     signal?: AbortSignal,

@@ -1,5 +1,6 @@
 import Anthropic from "@anthropic-ai/sdk";
 import { BaseProvider } from "./base";
+import { SystemPrompt } from "../types/provider";
 import { Message, ProviderType, ToolCall } from "../types/chat";
 
 export class AnthropicProvider extends BaseProvider {
@@ -67,7 +68,7 @@ export class AnthropicProvider extends BaseProvider {
 
   async chat(
     messages: Message[],
-    systemPrompt: string,
+    systemPrompt: SystemPrompt,
     onToken: (token: string) => void,
     onToolCall?: (toolCall: ToolCall) => Promise<string>,
     signal?: AbortSignal,
@@ -89,13 +90,13 @@ export class AnthropicProvider extends BaseProvider {
       const stream = client.messages.stream({
         model: this.config.model,
         max_tokens: this.config.maxTokens || 8192,
-        system: [
-          {
-            type: "text",
-            text: systemPrompt,
-            cache_control: { type: "ephemeral" },
-          },
-        ],
+        system:
+          typeof systemPrompt === "string"
+            ? [{ type: "text" as const, text: systemPrompt, cache_control: { type: "ephemeral" } }]
+            : [
+                { type: "text" as const, text: systemPrompt.staticPart, cache_control: { type: "ephemeral" } },
+                { type: "text" as const, text: systemPrompt.dynamicPart, cache_control: { type: "ephemeral" } },
+              ],
         messages: currentMessages,
         tools:
           tools && tools.length > 0

@@ -1,5 +1,5 @@
 import * as crypto from "crypto";
-import { AIProvider, ProviderConfig } from "../types/provider";
+import { AIProvider, ProviderConfig, SystemPrompt } from "../types/provider";
 import { Message, ProviderType, ToolCall } from "../types/chat";
 
 export abstract class BaseProvider implements AIProvider {
@@ -17,7 +17,7 @@ export abstract class BaseProvider implements AIProvider {
 
   abstract chat(
     messages: Message[],
-    systemPrompt: string,
+    systemPrompt: SystemPrompt,
     onToken: (token: string) => void,
     onToolCall?: (toolCall: ToolCall) => Promise<string>,
     signal?: AbortSignal,
@@ -26,6 +26,11 @@ export abstract class BaseProvider implements AIProvider {
 
   abstract listModels(): Promise<string[]>;
   abstract testConnection(): Promise<boolean>;
+
+  protected resolveSystemPrompt(systemPrompt: SystemPrompt): string {
+    if (typeof systemPrompt === "string") return systemPrompt;
+    return systemPrompt.staticPart + "\n\n" + systemPrompt.dynamicPart;
+  }
 
   protected createAssistantMessage(
     content: string,

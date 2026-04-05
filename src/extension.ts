@@ -9,7 +9,7 @@ import { ToolExecutor } from "./mcp/tool-executor";
 import { createProvider } from "./providers/index";
 import { ActiveEditorTracker } from "./context/active-editor";
 import { loadProjectContext } from "./context/workspace-files";
-import { buildSystemPrompt } from "./context/system-prompt";
+import { buildSystemPromptParts } from "./context/system-prompt";
 import { ProviderType, Message } from "./types/chat";
 import { AIProvider, ProviderConfig } from "./types/provider";
 import { WebviewToExtensionMessage, ExtensionToWebviewMessage, AppSettings } from "./types/messages";
@@ -282,7 +282,7 @@ class HimeChatViewProvider implements vscode.WebviewViewProvider {
     // Build system prompt
     const workspacePath = vscode.workspace.workspaceFolders?.[0]?.uri.fsPath || "";
     const projectContext = await loadProjectContext();
-    const activeFile = activeEditorTracker.getContext();
+    const activeFilePath = activeEditorTracker.getContext()?.filePath;
 
     // Notify webview about loaded project context files
     const loadedFiles: string[] = [];
@@ -293,10 +293,10 @@ class HimeChatViewProvider implements vscode.WebviewViewProvider {
       this.sendToWebview({ type: "projectContextLoaded", files: loadedFiles });
     }
     const settings = await settingsStorage.load();
-    const systemPrompt = buildSystemPrompt({
+    const systemPrompt = buildSystemPromptParts({
       workspacePath,
       model: settings.providers[providerType]?.model,
-      activeFile,
+      activeFilePath,
       projectContext,
       userSystemPrompt: settings.systemPrompt,
     });

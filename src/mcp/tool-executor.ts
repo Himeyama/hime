@@ -1,15 +1,21 @@
+import * as vscode from "vscode";
 import { MCPClientManager } from "./client";
 import { ToolCall } from "../types/chat";
 import { MCPTool } from "../types/mcp";
+import { BUILTIN_TOOL_NAMES, getBuiltinToolDefinitions, executeBuiltinTool } from "../context/built-in-tools";
 
 export class ToolExecutor {
   constructor(private mcpClient: MCPClientManager) {}
 
   getToolDefinitions(): MCPTool[] {
-    return this.mcpClient.listTools();
+    return [...getBuiltinToolDefinitions(), ...this.mcpClient.listTools()];
   }
 
   async executeToolCall(toolCall: ToolCall): Promise<string> {
+    if (BUILTIN_TOOL_NAMES.has(toolCall.name)) {
+      const workspacePath = vscode.workspace.workspaceFolders?.[0]?.uri.fsPath || "";
+      return executeBuiltinTool(toolCall.name, toolCall.arguments, workspacePath);
+    }
     const result = await this.mcpClient.executeTool(toolCall.name, toolCall.arguments);
     if (result.isError) {
       throw new Error(result.content);

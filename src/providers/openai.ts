@@ -1,6 +1,6 @@
 import OpenAI from "openai";
 import { BaseProvider } from "./base";
-import { ProviderConfig } from "../types/provider";
+import { ProviderConfig, SystemPrompt } from "../types/provider";
 import { Message, ProviderType, ToolCall } from "../types/chat";
 
 export class OpenAIProvider extends BaseProvider {
@@ -16,10 +16,11 @@ export class OpenAIProvider extends BaseProvider {
 
   protected convertMessages(
     messages: Message[],
-    systemPrompt: string
+    systemPrompt: string | SystemPrompt
   ): OpenAI.ChatCompletionMessageParam[] {
+    const resolved = typeof systemPrompt === "string" ? systemPrompt : this.resolveSystemPrompt(systemPrompt);
     const result: OpenAI.ChatCompletionMessageParam[] = [
-      { role: "system", content: systemPrompt },
+      { role: "system", content: resolved },
     ];
 
     for (const m of messages) {
@@ -64,7 +65,7 @@ export class OpenAIProvider extends BaseProvider {
 
   async chat(
     messages: Message[],
-    systemPrompt: string,
+    systemPrompt: SystemPrompt,
     onToken: (token: string) => void,
     onToolCall?: (toolCall: ToolCall) => Promise<string>,
     signal?: AbortSignal,

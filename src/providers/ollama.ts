@@ -1,7 +1,7 @@
 import * as crypto from "crypto";
 import { Ollama } from "ollama";
 import { BaseProvider } from "./base";
-import { ProviderConfig } from "../types/provider";
+import { ProviderConfig, SystemPrompt } from "../types/provider";
 import { Message, ProviderType, ToolCall } from "../types/chat";
 
 export class OllamaProvider extends BaseProvider {
@@ -16,10 +16,11 @@ export class OllamaProvider extends BaseProvider {
 
   private convertMessages(
     messages: Message[],
-    systemPrompt: string
+    systemPrompt: string | SystemPrompt
   ): { role: string; content: string; tool_calls?: any[] }[] {
+    const resolved = typeof systemPrompt === "string" ? systemPrompt : this.resolveSystemPrompt(systemPrompt);
     const result: { role: string; content: string; tool_calls?: any[] }[] = [
-      { role: "system", content: systemPrompt },
+      { role: "system", content: resolved },
     ];
 
     for (const m of messages) {
@@ -53,7 +54,7 @@ export class OllamaProvider extends BaseProvider {
 
   async chat(
     messages: Message[],
-    systemPrompt: string,
+    systemPrompt: SystemPrompt,
     onToken: (token: string) => void,
     onToolCall?: (toolCall: ToolCall) => Promise<string>,
     signal?: AbortSignal,

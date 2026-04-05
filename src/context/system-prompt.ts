@@ -1,23 +1,14 @@
 import * as os from "os";
 
-export function buildSystemPrompt(params: {
+type Params = {
   workspacePath: string;
   model?: string;
-  activeFile?: { filePath: string; language: string; content: string } | null;
+  activeFilePath?: string | null;
   projectContext: { claudeMd?: string; agentsMd?: string; readmeMd?: string };
   userSystemPrompt?: string;
-}): string {
-  const { workspacePath, model, activeFile, projectContext, userSystemPrompt } = params;
+};
 
-  const platform = process.platform;
-  const osName = platform === "win32" ? "Windows" : platform === "darwin" ? "macOS" : "Linux";
-  const shell = platform === "win32" ? "PowerShell" : "bash";
-  const osVersion = `${osName} ${os.release()}`;
-
-  const sections: string[] = [];
-
-  sections.push(
-    `You are an interactive agent that assists users with software engineering tasks. Use the instructions below and the tools available to you to support the user.
+const STATIC_INSTRUCTIONS = `You are an interactive agent that assists users with software engineering tasks. Use the instructions below and the tools available to you to support the user.
 
 IMPORTANT: Never generate or guess URLs for the user unless you are confident that the URLs are for helping the user with programming. You may only use URLs provided by the user in their messages or local files.
 
@@ -75,11 +66,23 @@ Focus text output on:
 - High-level status updates at natural milestones
 - Errors or blockers that change the plan
 
-If you can say it in one sentence, do not use three. Prefer short, direct sentences over long explanations.`
-  );
+If you can say it in one sentence, do not use three. Prefer short, direct sentences over long explanations.
 
-  // Environment (dynamic)
-  sections.push(
+## Response Language
+Always respond in Japanese. All explanations, comments, and communication with the user should be in Japanese. Technical terms and code identifiers should remain in their original form.`;
+
+export function buildSystemPromptParts(params: Params): { staticPart: string; dynamicPart: string } {
+  const { workspacePath, model, activeFilePath, projectContext, userSystemPrompt } = params;
+
+  const platform = process.platform;
+  const osName = platform === "win32" ? "Windows" : platform === "darwin" ? "macOS" : "Linux";
+  const shell = platform === "win32" ? "PowerShell" : "bash";
+  const osVersion = `${osName} ${os.release()}`;
+
+  const dynamicSections: string[] = [];
+
+  // Environment
+  dynamicSections.push(
     `## Environment\n` +
       `| Item | Value |\n` +
       `|---|---|\n` +
@@ -91,43 +94,45 @@ If you can say it in one sentence, do not use three. Prefer short, direct senten
   );
 
   // Session-Specific Guidance
-  sections.push(
+  dynamicSections.push(
     `## Session-Specific Guidance\n` +
       `- If you do not understand why the user denied a tool execution confirmation, ask them.\n` +
       `- For simple, directed codebase searches (e.g., finding a specific file/class/function), use Glob or Grep directly.\n` +
       `- Use ${shell} commands for all terminal operations.`
   );
 
-  // Response Language
-  sections.push(
-    `## Response Language\nAlways respond in Japanese. All explanations, comments, and communication with the user should be in Japanese. Technical terms and code identifiers should remain in their original form.`
-  );
-
-  // Active file
-  if (activeFile) {
-    sections.push(
+  // Active file path hint
+  if (activeFilePath) {
+    dynamicSections.push(
       `## Currently Open File\n` +
-        `- Path: ${activeFile.filePath}\n` +
-        `- Language: ${activeFile.language}\n` +
-        `\`\`\`${activeFile.language}\n${activeFile.content}\n\`\`\``
+        `- Path: ${activeFilePath}\n` +
+        `(Use the read_file tool to view its contents if needed)`
     );
   }
 
   // Project context files
   if (projectContext.claudeMd) {
-    sections.push(`## CLAUDE.md\n${projectContext.claudeMd}`);
+    dynamicSections.push(`## CLAUDE.md\n${projectContext.claudeMd}`);
   }
   if (projectContext.agentsMd) {
-    sections.push(`## AGENTS.md\n${projectContext.agentsMd}`);
+    dynamicSections.push(`## AGENTS.md\n${projectContext.agentsMd}`);
   }
   if (projectContext.readmeMd) {
-    sections.push(`## README.md\n${projectContext.readmeMd}`);
+    dynamicSections.push(`## README.md\n${projectContext.readmeMd}`);
   }
 
   // User system prompt
   if (userSystemPrompt) {
-    sections.push(`## User Instructions\n${userSystemPrompt}`);
+    dynamicSections.push(`## User Instructions\n${userSystemPrompt}`);
   }
 
-  return sections.join("\n\n");
+  return {
+    staticPart: STATIC_INSTRUCTIONS,
+    dynamicPart: dynamicSections.join("\n\n"),
+  };
+}
+
+export function buildSystemPrompt(params: Params): string {
+  const { staticPart, dynamicPart } = buildSystemPromptParts(params);
+  return staticPart + "\n\n" + dynamicPart;
 }

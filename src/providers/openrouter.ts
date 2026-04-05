@@ -1,6 +1,6 @@
 import OpenAI from "openai";
 import { BaseProvider } from "./base";
-import { ProviderConfig, DEFAULT_ENDPOINTS } from "../types/provider";
+import { ProviderConfig, DEFAULT_ENDPOINTS, SystemPrompt } from "../types/provider";
 import { Message, ProviderType, ToolCall } from "../types/chat";
 
 export class OpenRouterProvider extends BaseProvider {
@@ -20,13 +20,14 @@ export class OpenRouterProvider extends BaseProvider {
 
   protected convertMessages(
     messages: Message[],
-    systemPrompt: string
+    systemPrompt: string | SystemPrompt
   ): OpenAI.ChatCompletionMessageParam[] {
+    const resolved = typeof systemPrompt === "string" ? systemPrompt : this.resolveSystemPrompt(systemPrompt);
     const result: OpenAI.ChatCompletionMessageParam[] = [
       {
         role: "system",
         content: [
-          { type: "text", text: systemPrompt, cache_control: { type: "ephemeral" } } as any,
+          { type: "text", text: resolved, cache_control: { type: "ephemeral" } } as any,
         ],
       },
     ];
@@ -73,7 +74,7 @@ export class OpenRouterProvider extends BaseProvider {
 
   async chat(
     messages: Message[],
-    systemPrompt: string,
+    systemPrompt: SystemPrompt,
     onToken: (token: string) => void,
     onToolCall?: (toolCall: ToolCall) => Promise<string>,
     signal?: AbortSignal,

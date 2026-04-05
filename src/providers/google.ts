@@ -7,6 +7,7 @@ import {
   createPartFromFunctionResponse,
 } from "@google/genai";
 import { BaseProvider } from "./base";
+import { SystemPrompt } from "../types/provider";
 import { Message, ProviderType, ToolCall } from "../types/chat";
 
 // 認証方法:
@@ -111,12 +112,13 @@ export class GoogleProvider extends BaseProvider {
 
   async chat(
     messages: Message[],
-    systemPrompt: string,
+    systemPrompt: SystemPrompt,
     onToken: (token: string) => void,
     onToolCall?: (toolCall: ToolCall) => Promise<string>,
     signal?: AbortSignal,
     tools?: any[]
   ): Promise<Message> {
+    const resolvedSystemPrompt = this.resolveSystemPrompt(systemPrompt);
     const client = this.createClient();
     let currentContents = this.convertMessages(messages);
     const genaiTools = this.convertTools(tools || []);
@@ -136,7 +138,7 @@ export class GoogleProvider extends BaseProvider {
         model: this.config.model,
         contents: currentContents,
         config: {
-          systemInstruction: systemPrompt,
+          systemInstruction: resolvedSystemPrompt,
           maxOutputTokens: this.config.maxTokens || 8192,
           ...(genaiTools ? { tools: genaiTools } : {}),
         },
