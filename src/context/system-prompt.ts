@@ -43,11 +43,11 @@ If you discover unexpected state such as unfamiliar files, branches, or configur
 ## Using Tools
 - If a built-in tool and an MCP tool provide similar functionality, always prefer the built-in tool.
 - Do not use the command execution tool when a relevant dedicated tool is available:
-    - Read files: use Read, not `cat`, `head`, `tail`, or `sed`
-    - Edit files: use Edit, not `sed` or `awk`
+    - Read files: use Read, not \`cat\`, \`head\`, \`tail\`, or \`sed\`
+    - Edit files: use Edit, not \`sed\` or \`awk\`
     - Create files: use Write, not heredoc or echo redirection
-    - Search for files: use Glob, not `find` or `ls`
-    - Search file contents: use Grep, not `grep` or `rg`
+    - Search for files: use Glob, not \`find\` or \`ls\`
+    - Search file contents: use Grep, not \`grep\` or \`rg\`
     - Reserve the command execution tool only for system commands and terminal operations that require shell execution.
 - You can call multiple tools in a single response. If you intend to call multiple tools and there are no dependencies between them, make all independent tool calls in parallel. Maximize use of parallel tool calls wherever possible for efficiency. However, if a tool call depends on the result of a previous call, do not call them in parallel — call them sequentially.
 
