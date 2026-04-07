@@ -113,12 +113,14 @@ export function App() {
             streamingToolCalls={chat.streamingToolCalls}
             error={chat.error}
             loadedContextFiles={chat.loadedContextFiles}
+            skillsHelp={chat.skillsHelp}
             selectedProvider={selectedProvider}
             onSendMessage={(content) => chat.sendMessage(content, selectedProvider)}
             onProviderChange={handleProviderChange}
             onClearContext={chat.clearContext}
             onCompressContext={chat.compressContext}
             onAbortStream={chat.abortStream}
+            onDismissSkillsHelp={chat.dismissSkillsHelp}
           />
         </>
       )}

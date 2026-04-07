@@ -10,6 +10,7 @@ import { createProvider } from "./providers/index";
 import { ActiveEditorTracker } from "./context/active-editor";
 import { loadProjectContext } from "./context/workspace-files";
 import { buildSystemPromptParts } from "./context/system-prompt";
+import { loadAllSkills, findSkill, expandSkillPrompt, buildSkillsHelpText } from "./skills/loader";
 import { ProviderType, Message } from "./types/chat";
 import { AIProvider, ProviderConfig } from "./types/provider";
 import { WebviewToExtensionMessage, ExtensionToWebviewMessage, AppSettings } from "./types/messages";
@@ -231,6 +232,14 @@ class HimeChatViewProvider implements vscode.WebviewViewProvider {
           this.sendMcpStatus();
           break;
         }
+        case "executeSkill": {
+          await this.handleExecuteSkill(message.chatId, message.skillName, message.args, message.provider);
+          break;
+        }
+        case "listSkills": {
+          await this.handleListSkills();
+          break;
+        }
         case "addReaction": {
           const chat = await chatStorage.loadChat(message.chatId);
           const msg = chat.messages.find((m) => m.id === message.messageId);
@@ -440,6 +449,49 @@ class HimeChatViewProvider implements vscode.WebviewViewProvider {
     } finally {
       currentAbortController = null;
     }
+  }
+
+  private async handleExecuteSkill(
+    chatId: string,
+    skillName: string,
+    args: string,
+    providerType: ProviderType
+  ) {
+    const workspacePath = vscode.workspace.workspaceFolders?.[0]?.uri.fsPath || "";
+    const skill = await findSkill(skillName, workspacePath);
+    if (!skill) {
+      this.sendToWebview({
+        type: "error",
+        chatId,
+        error: `スキル "${skillName}" が見つかりませんでした。/skills で一覧を確認してください。`,
+      });
+      return;
+    }
+
+    // Get current selection and active file
+    const editor = vscode.window.activeTextEditor;
+    const selection = editor ? editor.document.getText(editor.selection) : "";
+    const activeFilePath = activeEditorTracker.getContext()?.filePath || "";
+
+    // Expand variables
+    const expandedPrompt = expandSkillPrompt(skill.prompt, {
+      arguments: args,
+      selection: selection || undefined,
+      activeFile: activeFilePath || undefined,
+    });
+
+    // Notify webview that skill was executed
+    this.sendToWebview({ type: "skillExecuted", chatId, skillName, expandedPrompt });
+
+    // Send as a normal message
+    await this.handleSendMessage(chatId, expandedPrompt, providerType);
+  }
+
+  private async handleListSkills() {
+    const workspacePath = vscode.workspace.workspaceFolders?.[0]?.uri.fsPath || "";
+    const skills = await loadAllSkills(workspacePath);
+    const helpText = buildSkillsHelpText(skills);
+    this.sendToWebview({ type: "skillsList", content: helpText });
   }
 
   private async handleCompressContext(chatId: string) {

@@ -21,7 +21,9 @@ export type WebviewToExtensionMessage =
   | { command: "openSettingsJson" }
   | { command: "addReaction"; chatId: string; messageId: string; reaction: "thumbsUp" | "thumbsDown" }
   | { command: "getChatList" }
-  | { command: "getMcpStatus" };
+  | { command: "getMcpStatus" }
+  | { command: "executeSkill"; chatId: string; skillName: string; args: string; provider: ProviderType }
+  | { command: "listSkills" };
 
 // Extension → Webview
 export type ExtensionToWebviewMessage =
@@ -39,7 +41,9 @@ export type ExtensionToWebviewMessage =
   | { type: "activeEditorChanged"; filePath: string; language: string }
   | { type: "mcpTools"; tools: import("./mcp").MCPTool[] }
   | { type: "mcpStatus"; servers: { name: string; status: "connected" | "disconnected" | "error"; toolCount: number }[] }
-  | { type: "projectContextLoaded"; files: string[] };
+  | { type: "projectContextLoaded"; files: string[] }
+  | { type: "skillsList"; content: string }
+  | { type: "skillExecuted"; chatId: string; skillName: string; expandedPrompt: string };
 
 export interface ProviderSettings {
   endpoint?: string;

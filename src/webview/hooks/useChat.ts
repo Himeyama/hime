@@ -13,6 +13,7 @@ export function useChat() {
   const [streamingToolCalls, setStreamingToolCalls] = useState<ToolCall[]>([]);
   const [error, setError] = useState<string | null>(null);
   const [loadedContextFiles, setLoadedContextFiles] = useState<string[] | null>(null);
+  const [skillsHelp, setSkillsHelp] = useState<string | null>(null);
 
   // Keep a ref to currentChat.id so the message handler always sees the latest value
   const currentChatIdRef = useRef<string | null>(null);
@@ -94,6 +95,24 @@ export function useChat() {
         case "projectContextLoaded":
           setLoadedContextFiles(msg.files);
           break;
+        case "skillsList":
+          setSkillsHelp(msg.content);
+          break;
+        case "skillExecuted":
+          // Add skill execution as a user message in the UI
+          if (msg.chatId === chatId) {
+            setCurrentChat((prev) => {
+              if (!prev) return prev;
+              const skillMessage = {
+                id: crypto.randomUUID(),
+                role: "user" as const,
+                content: `/${msg.skillName}\n\n${msg.expandedPrompt}`,
+                timestamp: new Date().toISOString(),
+              };
+              return { ...prev, messages: [...prev.messages, skillMessage] };
+            });
+          }
+          break;
         case "error":
           if (msg.chatId === chatId) {
             setError(msg.error);
@@ -109,8 +128,29 @@ export function useChat() {
     (content: string, provider: ProviderType) => {
       if (!currentChat) return;
       setError(null);
+
+      // Handle /skills command locally
+      if (content.trim() === "/skills") {
+        postMessage({ command: "listSkills" });
+        return;
+      }
+
+      // Handle /skill-name commands
+      const skillMatch = content.trim().match(/^\/([a-zA-Z][\w-]*)\s*([\s\S]*)$/);
+      if (skillMatch) {
+        const skillName = skillMatch[1];
+        const skillArgs = skillMatch[2].trim();
+        postMessage({
+          command: "executeSkill",
+          chatId: currentChat.id,
+          skillName,
+          args: skillArgs,
+          provider,
+        });
+        return;
+      }
+
       const userMessageId = crypto.randomUUID();
-      const assistantMessageId = crypto.randomUUID(); // Predetermine ID if possible or wait for first token
 
       const userMessage: Message = {
         id: userMessageId,
@@ -191,6 +231,10 @@ export function useChat() {
     [currentChat, postMessage]
   );
 
+  const dismissSkillsHelp = useCallback(() => {
+    setSkillsHelp(null);
+  }, []);
+
   return {
     chats,
     currentChat,
@@ -200,6 +244,7 @@ export function useChat() {
     streamingToolCalls,
     error,
     loadedContextFiles,
+    skillsHelp,
     sendMessage,
     createChat,
     loadChat,
@@ -208,5 +253,6 @@ export function useChat() {
     compressContext,
     abortStream,
     addReaction,
+    dismissSkillsHelp,
   };
 }

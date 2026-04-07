@@ -1,4 +1,6 @@
 import React from "react";
+import ReactMarkdown from "react-markdown";
+import remarkGfm from "remark-gfm";
 import { Chat, ProviderType, ToolCall } from "../../types/chat";
 import { MessageList } from "./MessageList";
 import { InputArea } from "./InputArea";
@@ -13,12 +15,14 @@ interface ChatViewProps {
   streamingToolCalls?: ToolCall[];
   error: string | null;
   loadedContextFiles: string[] | null;
+  skillsHelp: string | null;
   selectedProvider: ProviderType;
   onSendMessage: (content: string) => void;
   onProviderChange: (provider: ProviderType) => void;
   onClearContext: () => void;
   onCompressContext: () => void;
   onAbortStream: () => void;
+  onDismissSkillsHelp: () => void;
 }
 
 export function ChatView({
@@ -30,12 +34,14 @@ export function ChatView({
   streamingToolCalls,
   error,
   loadedContextFiles,
+  skillsHelp,
   selectedProvider,
   onSendMessage,
   onProviderChange,
   onClearContext,
   onCompressContext,
   onAbortStream,
+  onDismissSkillsHelp,
 }: ChatViewProps) {
   if (!chat) {
     return (
@@ -90,6 +96,24 @@ export function ChatView({
         streamingMessageId={streamingMessageId}
         streamingToolCalls={streamingToolCalls}
       />
+
+      {skillsHelp && (
+        <div className="flex-1 overflow-y-auto px-4 py-4 animate-fade-in">
+          <div className="max-w-3xl mx-auto">
+            <div className="prose prose-sm text-vsc-fg bg-vsc-bg-hover/30 rounded-xl p-5 border border-vsc-border/50">
+              <ReactMarkdown remarkPlugins={[remarkGfm]}>{skillsHelp}</ReactMarkdown>
+            </div>
+            <div className="flex justify-center mt-3">
+              <button
+                className="bg-transparent border border-vsc-border text-vsc-fg-secondary cursor-pointer px-4 py-1.5 rounded-lg text-xs hover:bg-vsc-bg-hover transition-colors"
+                onClick={onDismissSkillsHelp}
+              >
+                閉じる
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {error && (
         <div className="bg-red-500/10 text-vsc-danger px-3 py-2 text-xs border-t border-vsc-danger/30 animate-fade-in flex items-center gap-1.5">
