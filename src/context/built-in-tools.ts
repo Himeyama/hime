@@ -32,10 +32,7 @@ export const BUILTIN_TOOL_NAMES = new Set([
   "Grep",
   IS_WINDOWS ? "PowerShell" : "Bash",
   "WebFetch",
-  // Legacy names for compatibility
-  "read_file",
-  "list_directory",
-  "search_files",
+  "WebSearch",
 ]);
 
 export function getBuiltinToolDefinitions(): MCPTool[] {
@@ -299,6 +296,32 @@ Key Features & Constraints:
         required: ["url"],
       },
     },
+    {
+      name: "WebSearch",
+      description: `Searches the web using DuckDuckGo and returns a list of results with titles, URLs, and snippets.
+
+Key Features & Constraints:
+- No API key required.
+- Returns up to 10 results per query.
+- Use this to discover relevant URLs, then use WebFetch to read specific pages in detail.`,
+      inputSchema: {
+        type: "object",
+        properties: {
+          query: {
+            type: "string",
+            description: "The search query string.",
+          },
+          num_results: {
+            type: "number",
+            description: "Number of results to return (1-10). Defaults to 5.",
+            default: 5,
+            minimum: 1,
+            maximum: 10,
+          },
+        },
+        required: ["query"],
+      },
+    },
   ];
 
   return tools;
@@ -337,43 +360,8 @@ export async function executeBuiltinTool(
     case "WebFetch":
       return executeWebFetch(args);
 
-    // ── Legacy names ─────────────────────────────────────────────────────────
-    case "read_file": {
-      const filePath = resolvePath(args.path as string);
-      const content = await fs.readFile(filePath, "utf-8");
-      const lines = content.split("\n");
-      if (lines.length > MAX_READ_LINES) {
-        return (
-          lines.slice(0, MAX_READ_LINES).join("\n") +
-          `\n\n... (truncated, showing ${MAX_READ_LINES}/${lines.length} lines)`
-        );
-      }
-      return content;
-    }
-
-    case "list_directory": {
-      const dirPath = resolvePath((args.path as string) || ".");
-      const entries = await fs.readdir(dirPath, { withFileTypes: true });
-      const lines = entries
-        .sort((a, b) => {
-          if (a.isDirectory() !== b.isDirectory()) return a.isDirectory() ? -1 : 1;
-          return a.name.localeCompare(b.name);
-        })
-        .map((e) => (e.isDirectory() ? `${e.name}/` : e.name));
-      return lines.join("\n") || "(empty directory)";
-    }
-
-    case "search_files":
-      return executeGrep(
-        {
-          pattern: args.pattern,
-          path: args.directory,
-          glob: args.file_pattern ? `**/*${args.file_pattern}` : undefined,
-          output_mode: "content",
-        },
-        workspacePath,
-        resolvePath
-      );
+    case "WebSearch":
+      return executeWebSearch(args);
 
     default:
       throw new Error(`Unknown built-in tool: ${toolName}`);
@@ -899,6 +887,117 @@ async function executeWebFetch(args: Record<string, unknown>): Promise<string> {
       resolve("Error: Request timed out after 30 seconds");
     });
   });
+}
+
+// ─── WebSearch ──────────────────────────────────────────────────────────────
+
+async function executeWebSearch(args: Record<string, unknown>): Promise<string> {
+  const query = args.query as string;
+  const numResults = Math.min(Math.max(Number(args.num_results) || 5, 1), 10);
+
+  const url = `https://html.duckduckgo.com/html/?q=${encodeURIComponent(query)}`;
+
+  return new Promise<string>((resolve) => {
+    const req = https.get(
+      url,
+      {
+        headers: {
+          "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
+          Accept: "text/html",
+          "Accept-Language": "en-US,en;q=0.9",
+        },
+        timeout: 15000,
+      },
+      (res) => {
+        if (res.statusCode && res.statusCode >= 300 && res.statusCode < 400 && res.headers.location) {
+          resolve(`Redirect to: ${res.headers.location}`);
+          return;
+        }
+        if (res.statusCode && res.statusCode >= 400) {
+          resolve(`HTTP ${res.statusCode}: ${res.statusMessage}`);
+          return;
+        }
+
+        const chunks: Buffer[] = [];
+        res.on("data", (chunk: Buffer) => chunks.push(chunk));
+        res.on("end", () => {
+          const html = Buffer.concat(chunks).toString("utf-8");
+          const results = parseDuckDuckGoResults(html, numResults);
+          if (results.length === 0) {
+            resolve("(no search results found)");
+            return;
+          }
+          const formatted = results
+            .map((r, i) => `[${i + 1}] ${r.title}\n    ${r.url}\n    ${r.snippet}`)
+            .join("\n\n");
+          resolve(formatted);
+        });
+        res.on("error", (err: Error) => resolve(`Error reading response: ${err.message}`));
+      }
+    );
+
+    req.on("error", (err: Error) => resolve(`Error searching: ${err.message}`));
+    req.on("timeout", () => {
+      req.destroy();
+      resolve("Error: Search request timed out");
+    });
+  });
+}
+
+interface SearchResult {
+  title: string;
+  url: string;
+  snippet: string;
+}
+
+function parseDuckDuckGoResults(html: string, maxResults: number): SearchResult[] {
+  const results: SearchResult[] = [];
+
+  // DuckDuckGo HTML results are in <div class="result ..."> blocks
+  const resultBlocks = html.split(/class="result\s/g).slice(1);
+
+  for (const block of resultBlocks) {
+    if (results.length >= maxResults) break;
+
+    // Extract title and URL from <a class="result__a" href="...">title</a>
+    const linkMatch = block.match(/<a[^>]+class="result__a"[^>]*href="([^"]*)"[^>]*>([\s\S]*?)<\/a>/);
+    if (!linkMatch) continue;
+
+    let url = linkMatch[1];
+    const titleHtml = linkMatch[2];
+
+    // DuckDuckGo wraps URLs through a redirect — extract the actual URL
+    const uddgMatch = url.match(/uddg=([^&]+)/);
+    if (uddgMatch) {
+      url = decodeURIComponent(uddgMatch[1]);
+    }
+
+    // Extract snippet from <a class="result__snippet" ...>...</a>
+    const snippetMatch = block.match(/<a[^>]+class="result__snippet"[^>]*>([\s\S]*?)<\/a>/);
+    const snippetHtml = snippetMatch ? snippetMatch[1] : "";
+
+    const title = stripHtmlTags(titleHtml).trim();
+    const snippet = stripHtmlTags(snippetHtml).trim();
+
+    if (title && url) {
+      results.push({ title, url, snippet });
+    }
+  }
+
+  return results;
+}
+
+function stripHtmlTags(html: string): string {
+  return html
+    .replace(/<[^>]+>/g, "")
+    .replace(/&nbsp;/g, " ")
+    .replace(/&amp;/g, "&")
+    .replace(/&lt;/g, "<")
+    .replace(/&gt;/g, ">")
+    .replace(/&quot;/g, '"')
+    .replace(/&#39;/g, "'")
+    .replace(/\s+/g, " ")
+    .trim();
 }
 
 function htmlToText(html: string): string {
