@@ -96,6 +96,7 @@ export function useChat() {
           setLoadedContextFiles(msg.files);
           break;
         case "skillsList":
+        case "helpContent":
           setSkillsHelp(msg.content);
           break;
         case "skillExecuted":
@@ -129,9 +130,22 @@ export function useChat() {
       if (!currentChat) return;
       setError(null);
 
-      // Handle /skills command locally
-      if (content.trim() === "/skills") {
+      // Handle built-in commands
+      const trimmed = content.trim();
+      if (trimmed === "/help") {
+        postMessage({ command: "listHelp" });
+        return;
+      }
+      if (trimmed === "/skills") {
         postMessage({ command: "listSkills" });
+        return;
+      }
+      if (trimmed === "/compact") {
+        postMessage({ command: "compressContext", chatId: currentChat.id });
+        return;
+      }
+      if (trimmed === "/clear") {
+        postMessage({ command: "clearContext", chatId: currentChat.id });
         return;
       }
 

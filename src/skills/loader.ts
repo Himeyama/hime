@@ -150,6 +150,40 @@ export function expandSkillPrompt(
 }
 
 /**
+ * Build the help text for /help command (built-in commands + skills).
+ */
+export function buildHelpText(skills: SkillDefinition[]): string {
+  const lines = [
+    "## Hime ヘルプ\n",
+    "### ビルトインコマンド",
+    "| コマンド | 説明 |",
+    "|---|---|",
+    "| `/help` | このヘルプを表示 |",
+    "| `/compact` | 会話を要約してコンテキストを圧縮 |",
+    "| `/clear` | コンテキストをクリア |",
+    "| `/skills` | スキル一覧を表示 |",
+  ];
+
+  if (skills.length > 0) {
+    lines.push("");
+    lines.push("### スキル");
+    lines.push("| コマンド | 説明 | ソース |");
+    lines.push("|---|---|---|");
+    for (const skill of skills) {
+      const source = skill.source === "local" ? "ローカル" : "グローバル";
+      lines.push(`| \`/${skill.name}\` | ${skill.description || "-"} | ${source} |`);
+    }
+  }
+
+  lines.push("");
+  lines.push("### 使い方");
+  lines.push("- `/コマンド名` で実行（例: `/compact`）");
+  lines.push("- `/スキル名 引数` で引数付き実行（例: `/commit fix: typo`）");
+
+  return lines.join("\n");
+}
+
+/**
  * Build the help text for /skills command.
  */
 export function buildSkillsHelpText(skills: SkillDefinition[]): string {

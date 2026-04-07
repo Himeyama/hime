@@ -10,7 +10,7 @@ import { createProvider } from "./providers/index";
 import { ActiveEditorTracker } from "./context/active-editor";
 import { loadProjectContext } from "./context/workspace-files";
 import { buildSystemPromptParts } from "./context/system-prompt";
-import { loadAllSkills, findSkill, expandSkillPrompt, buildSkillsHelpText } from "./skills/loader";
+import { loadAllSkills, findSkill, expandSkillPrompt, buildSkillsHelpText, buildHelpText } from "./skills/loader";
 import { ProviderType, Message } from "./types/chat";
 import { AIProvider, ProviderConfig } from "./types/provider";
 import { WebviewToExtensionMessage, ExtensionToWebviewMessage, AppSettings } from "./types/messages";
@@ -238,6 +238,10 @@ class HimeChatViewProvider implements vscode.WebviewViewProvider {
         }
         case "listSkills": {
           await this.handleListSkills();
+          break;
+        }
+        case "listHelp": {
+          await this.handleListHelp();
           break;
         }
         case "addReaction": {
@@ -492,6 +496,13 @@ class HimeChatViewProvider implements vscode.WebviewViewProvider {
     const skills = await loadAllSkills(workspacePath);
     const helpText = buildSkillsHelpText(skills);
     this.sendToWebview({ type: "skillsList", content: helpText });
+  }
+
+  private async handleListHelp() {
+    const workspacePath = vscode.workspace.workspaceFolders?.[0]?.uri.fsPath || "";
+    const skills = await loadAllSkills(workspacePath);
+    const helpText = buildHelpText(skills);
+    this.sendToWebview({ type: "helpContent", content: helpText });
   }
 
   private async handleCompressContext(chatId: string) {
