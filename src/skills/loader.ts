@@ -20,14 +20,14 @@ const BUILTIN_SKILLS: SkillDefinition[] = [
 
 手順：
 1. \`git diff --staged\` でステージ済みの変更を確認する
-2. ステージ済みの変更がなければ \`git status\` を確認して報告する（コミットしない）
+2. ステージ済みの変更がなければ \`git status\` を確認して報告する (コミットしない)
 3. 変更内容を分析して、Conventional Commits 形式のコミットメッセージを生成する
    - 形式: \`<type>(<scope>): <description>\`
    - type: feat, fix, docs, style, refactor, test, chore など
-   - description は日本語で簡潔に（72文字以内）
+   - description は日本語で簡潔に (72文字以内) 
    - 変更が複数ファイル・複数目的にわたる場合は本文も追加
 4. \`git commit -m "<message>"\` でコミットを実行する
-5. コミット結果（ハッシュ・変更ファイル数・行数）を報告する
+5. コミット結果 (ハッシュ・変更ファイル数・行数) を報告する
 
 $ARGUMENTS が指定された場合は、その内容をコミットメッセージのヒントとして使用してください。`,
   },
@@ -42,8 +42,8 @@ $ARGUMENTS が指定された場合は、その内容をコミットメッセー
 2. 未コミット変更がある場合は警告してユーザーの意図を確認する
 3. \`git remote -v\` でリモートの設定を確認する
 4. \`git push origin <現在のブランチ名>\` でプッシュを実行する
-   - 初回プッシュ（上流ブランチ未設定）の場合は \`--set-upstream\` を付ける
-5. プッシュ結果（URL・ブランチ名・コミット数）を報告する
+   - 初回プッシュ (上流ブランチ未設定) の場合は \`--set-upstream\` を付ける
+5. プッシュ結果 (URL・ブランチ名・コミット数) を報告する
 
 $ARGUMENTS が指定された場合は追加の git push オプションとして使用してください。`,
   },
@@ -83,7 +83,7 @@ $ARGUMENTS
 
 対象コードが選択されていない場合は、Read ツールでアクティブファイルを読み込んでレビューしてください。
 
-レビュー観点（優先順位順）：
+レビュー観点 (優先順位順) ：
 1. **バグ・ロジックエラー** — 明らかなバグ、エッジケースの未処理、off-by-one エラーなど
 2. **セキュリティ** — インジェクション、XSS、認証・認可の欠陥、機密情報の露出など
 3. **パフォーマンス** — 不要なループ、N+1 問題、メモリリーク、非効率なアルゴリズムなど
@@ -97,7 +97,7 @@ $ARGUMENTS
 🔵 Info       : [ファイル名:行番号] — 説明
 ✅ 良い点     : 説明
 \`\`\`
-問題が一切なければ「✅ 問題なし」とだけ記載してください。`,
+問題が一切なければ「✨ 問題なし」とだけ記載してください。`,
   },
   {
     name: "fix",
@@ -111,8 +111,8 @@ $ARGUMENTS
 
 修正の手順：
 1. まず Read ツールで対象ファイルを読み込み、問題の全体像を把握する
-2. エラーメッセージや問題の根本原因を特定する（症状ではなく原因を修正すること）
-3. Edit ツールで最小限の変更を行う（関係ない部分は変更しない）
+2. エラーメッセージや問題の根本原因を特定する (症状ではなく原因を修正すること) 
+3. Edit ツールで最小限の変更を行う (関係ない部分は変更しない) 
 4. 修正後、関連するテストがあれば実行して回帰がないことを確認する
 5. 修正内容を unified diff 形式で簡潔に報告する
 
@@ -333,8 +333,8 @@ export function buildHelpText(skills: SkillDefinition[]): string {
 
   lines.push("");
   lines.push("### 使い方");
-  lines.push("- `/コマンド名` で実行（例: `/compact`）");
-  lines.push("- `/スキル名 引数` で引数付き実行（例: `/commit fix: typo`）");
+  lines.push("- `/コマンド名` で実行 (例: `/compact`) ");
+  lines.push("- `/スキル名 引数` で引数付き実行 (例: `/commit fix: typo`) ");
 
   return lines.join("\n");
 }
@@ -371,8 +371,8 @@ export function buildSkillsHelpText(skills: SkillDefinition[]): string {
 
   lines.push("");
   lines.push("### 使い方");
-  lines.push("- `/スキル名` で実行（例: `/commit`）");
-  lines.push("- `/スキル名 引数` で引数付き実行（例: `/commit fix: typo`）");
+  lines.push("- `/スキル名` で実行 (例: `/commit`)");
+  lines.push("- `/スキル名 引数` で引数付き実行 (例: `/commit fix: typo`)");
   lines.push("");
   lines.push("### 変数");
   lines.push("| 変数 | 内容 |");
