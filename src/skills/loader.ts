@@ -6,8 +6,137 @@ export interface SkillDefinition {
   name: string;
   description: string;
   prompt: string;
-  source: "local" | "global";
+  source: "local" | "global" | "builtin";
 }
+
+// ─── Built-in Skills ─────────────────────────────────────────────────────────
+
+const BUILTIN_SKILLS: SkillDefinition[] = [
+  {
+    name: "commit",
+    description: "ステージ済みの変更を解析してコミットメッセージを生成し、git commit を実行",
+    source: "builtin",
+    prompt: `ステージング済みの変更を確認し、適切なコミットメッセージを生成してコミットしてください。
+
+手順：
+1. \`git diff --staged\` でステージ済みの変更を確認する
+2. ステージ済みの変更がなければ \`git status\` を確認して報告する（コミットしない）
+3. 変更内容を分析して、Conventional Commits 形式のコミットメッセージを生成する
+   - 形式: \`<type>(<scope>): <description>\`
+   - type: feat, fix, docs, style, refactor, test, chore など
+   - description は日本語で簡潔に（72文字以内）
+   - 変更が複数ファイル・複数目的にわたる場合は本文も追加
+4. \`git commit -m "<message>"\` でコミットを実行する
+5. コミット結果（ハッシュ・変更ファイル数・行数）を報告する
+
+$ARGUMENTS が指定された場合は、その内容をコミットメッセージのヒントとして使用してください。`,
+  },
+  {
+    name: "push",
+    description: "現在のブランチをリモートにプッシュ",
+    source: "builtin",
+    prompt: `現在のブランチをリモートリポジトリにプッシュしてください。
+
+手順：
+1. \`git status\` で現在のブランチと未コミット変更の有無を確認する
+2. 未コミット変更がある場合は警告してユーザーの意図を確認する
+3. \`git remote -v\` でリモートの設定を確認する
+4. \`git push origin <現在のブランチ名>\` でプッシュを実行する
+   - 初回プッシュ（上流ブランチ未設定）の場合は \`--set-upstream\` を付ける
+5. プッシュ結果（URL・ブランチ名・コミット数）を報告する
+
+$ARGUMENTS が指定された場合は追加の git push オプションとして使用してください。`,
+  },
+  {
+    name: "explain",
+    description: "選択コードまたはアクティブファイルを詳しく説明",
+    source: "builtin",
+    prompt: `以下のコードを詳しく説明してください。
+
+{{selection}}
+ファイル: {{activeFile}}
+$ARGUMENTS
+
+対象コードが選択されていない場合は、Read ツールでアクティブファイルを読み込んで説明してください。
+
+説明の構成：
+1. **目的** — このコードが何をするかを 1〜2 文で説明
+2. **処理の流れ** — 入力→処理→出力の流れをステップで説明
+3. **重要なポイント** — アルゴリズムの特徴・設計上の工夫・注意すべき副作用
+4. **依存関係** — 使用している主要な外部ライブラリ・モジュールとその役割
+
+初級〜中級開発者が理解できるレベルで、簡潔かつ正確に説明してください。`,
+  },
+  {
+    name: "review",
+    description: "選択コードまたはアクティブファイルのコードレビューを実施",
+    source: "builtin",
+    prompt: `以下のコードをレビューしてください。
+
+{{selection}}
+ファイル: {{activeFile}}
+$ARGUMENTS
+
+対象コードが選択されていない場合は、Read ツールでアクティブファイルを読み込んでレビューしてください。
+
+レビュー観点（優先順位順）：
+1. **バグ・ロジックエラー** — 明らかなバグ、エッジケースの未処理、off-by-one エラーなど
+2. **セキュリティ** — インジェクション、XSS、認証・認可の欠陥、機密情報の露出など
+3. **パフォーマンス** — 不要なループ、N+1 問題、メモリリーク、非効率なアルゴリズムなど
+4. **保守性** — 関数の責務分離、命名の明瞭さ、重複コードなど
+5. **良い点** — 特に優れた実装があれば言及する
+
+出力形式：
+\`\`\`
+🔴 Critical   : [ファイル名:行番号] — 説明
+🟡 Warning    : [ファイル名:行番号] — 説明
+🔵 Info       : [ファイル名:行番号] — 説明
+✅ 良い点     : 説明
+\`\`\`
+問題が一切なければ「✅ 問題なし」とだけ記載してください。`,
+  },
+  {
+    name: "fix",
+    description: "選択コードまたはアクティブファイルのバグ・問題を修正",
+    source: "builtin",
+    prompt: `以下のコードの問題を修正してください。
+
+{{selection}}
+ファイル: {{activeFile}}
+$ARGUMENTS
+
+修正の手順：
+1. まず Read ツールで対象ファイルを読み込み、問題の全体像を把握する
+2. エラーメッセージや問題の根本原因を特定する（症状ではなく原因を修正すること）
+3. Edit ツールで最小限の変更を行う（関係ない部分は変更しない）
+4. 修正後、関連するテストがあれば実行して回帰がないことを確認する
+5. 修正内容を unified diff 形式で簡潔に報告する
+
+選択範囲がない場合は、アクティブファイルで報告されている問題を特定して修正してください。`,
+  },
+  {
+    name: "test",
+    description: "選択コードまたはアクティブファイルに対するテストを生成",
+    source: "builtin",
+    prompt: `以下のコードに対するテストを生成してください。
+
+{{selection}}
+ファイル: {{activeFile}}
+$ARGUMENTS
+
+テスト生成の手順：
+1. Read ツールで対象ファイルを読み込み、テスト対象の関数・クラスを把握する
+2. プロジェクト内の既存テストファイルを Glob/Read で確認し、テストフレームワーク・命名規則・スタイルに合わせる
+3. 以下のケースを網羅するテストを生成する：
+   - **正常系** — 典型的な入力での期待通りの動作
+   - **異常系** — 不正な入力、エラーケース、例外処理
+   - **エッジケース** — 空値・null・undefined・境界値など
+4. テストは「汎用的な真偽値チェック」ではなく「具体的な期待値」でアサートすること
+5. テストを適切なファイルに Write/Edit し、テストランナーで実行して全件通過を確認する
+
+選択範囲がない場合は、アクティブファイル全体のテストを生成してください。`,
+  },
+];
 
 interface SkillFrontmatter {
   name?: string;
@@ -88,8 +217,8 @@ async function loadSkillsFromDir(
 }
 
 /**
- * Load all skills from global (~/.hime/skills/) and local (.agents/skills/) directories.
- * Local skills override global skills with the same name.
+ * Load all skills.
+ * Priority (highest wins): local > global > builtin
  */
 export async function loadAllSkills(workspacePath?: string): Promise<SkillDefinition[]> {
   const globalDir = path.join(os.homedir(), ".hime", "skills");
@@ -101,8 +230,11 @@ export async function loadAllSkills(workspacePath?: string): Promise<SkillDefini
     localSkills = await loadSkillsFromDir(localDir, "local");
   }
 
-  // Local overrides global (same name)
+  // builtin → global → local (後から上書き)
   const skillMap = new Map<string, SkillDefinition>();
+  for (const skill of BUILTIN_SKILLS) {
+    skillMap.set(skill.name, skill);
+  }
   for (const skill of globalSkills) {
     skillMap.set(skill.name, skill);
   }
@@ -111,6 +243,13 @@ export async function loadAllSkills(workspacePath?: string): Promise<SkillDefini
   }
 
   return Array.from(skillMap.values());
+}
+
+/**
+ * Return only the built-in skills.
+ */
+export function getBuiltinSkills(): SkillDefinition[] {
+  return BUILTIN_SKILLS;
 }
 
 /**
@@ -164,12 +303,25 @@ export function buildHelpText(skills: SkillDefinition[]): string {
     "| `/skills` | スキル一覧を表示 |",
   ];
 
-  if (skills.length > 0) {
+  const builtinSkills = skills.filter((s) => s.source === "builtin");
+  const userSkills = skills.filter((s) => s.source !== "builtin");
+
+  if (builtinSkills.length > 0) {
     lines.push("");
-    lines.push("### スキル");
+    lines.push("### 標準スキル");
+    lines.push("| コマンド | 説明 |");
+    lines.push("|---|---|");
+    for (const skill of builtinSkills) {
+      lines.push(`| \`/${skill.name}\` | ${skill.description || "-"} |`);
+    }
+  }
+
+  if (userSkills.length > 0) {
+    lines.push("");
+    lines.push("### カスタムスキル");
     lines.push("| コマンド | 説明 | ソース |");
     lines.push("|---|---|---|");
-    for (const skill of skills) {
+    for (const skill of userSkills) {
       const source = skill.source === "local" ? "ローカル" : "グローバル";
       lines.push(`| \`/${skill.name}\` | ${skill.description || "-"} | ${source} |`);
     }
@@ -187,35 +339,30 @@ export function buildHelpText(skills: SkillDefinition[]): string {
  * Build the help text for /skills command.
  */
 export function buildSkillsHelpText(skills: SkillDefinition[]): string {
-  if (skills.length === 0) {
-    return `## スキル
+  const builtinSkills = skills.filter((s) => s.source === "builtin");
+  const userSkills = skills.filter((s) => s.source !== "builtin");
 
-スキルが見つかりませんでした。
+  const lines = ["## スキル一覧\n"];
 
-### スキルの追加方法
-
-\`~/.hime/skills/<skill-name>/SKILL.md\` (グローバル) または
-\`.agents/skills/<skill-name>/SKILL.md\` (プロジェクト) にファイルを作成してください。
-
-\`\`\`markdown
----
-name: my-skill
-description: スキルの説明
----
-
-プロンプト本文。$ARGUMENTS で引数を受け取れます。
-\`\`\``;
+  // Built-in skills section
+  lines.push("### 標準スキル");
+  lines.push("インストール後すぐに使えるスキルです。\n");
+  lines.push("| コマンド | 説明 |");
+  lines.push("|---|---|");
+  for (const skill of builtinSkills) {
+    lines.push(`| \`/${skill.name}\` | ${skill.description || "-"} |`);
   }
 
-  const lines = [
-    "## スキル一覧\n",
-    "| コマンド | 説明 | ソース |",
-    "|---|---|---|",
-  ];
-
-  for (const skill of skills) {
-    const source = skill.source === "local" ? "ローカル" : "グローバル";
-    lines.push(`| \`/${skill.name}\` | ${skill.description || "-"} | ${source} |`);
+  // User-defined skills section
+  if (userSkills.length > 0) {
+    lines.push("");
+    lines.push("### カスタムスキル");
+    lines.push("| コマンド | 説明 | ソース |");
+    lines.push("|---|---|---|");
+    for (const skill of userSkills) {
+      const source = skill.source === "local" ? "ローカル" : "グローバル";
+      lines.push(`| \`/${skill.name}\` | ${skill.description || "-"} | ${source} |`);
+    }
   }
 
   lines.push("");
@@ -230,8 +377,9 @@ description: スキルの説明
   lines.push("| `{{selection}}` | エディタの選択範囲 |");
   lines.push("| `{{activeFile}}` | アクティブファイルのパス |");
   lines.push("");
-  lines.push("### スキルの追加");
+  lines.push("### カスタムスキルの追加");
   lines.push("`~/.hime/skills/<name>/SKILL.md` (グローバル) または `.agents/skills/<name>/SKILL.md` (プロジェクト) に配置");
+  lines.push("標準スキルと同名にすることで上書きも可能です。");
 
   return lines.join("\n");
 }
