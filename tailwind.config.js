@@ -4,6 +4,46 @@ module.exports = {
   theme: {
     extend: {
       colors: {
+        /* shadcn/ui 標準トークン (VSCode テーマ変数にマッピング) */
+        background: "var(--background)",
+        foreground: "var(--foreground)",
+        card: {
+          DEFAULT: "var(--card)",
+          foreground: "var(--card-foreground)",
+        },
+        popover: {
+          DEFAULT: "var(--popover)",
+          foreground: "var(--popover-foreground)",
+        },
+        primary: {
+          DEFAULT: "var(--primary)",
+          foreground: "var(--primary-foreground)",
+          hover: "var(--primary-hover)",
+        },
+        secondary: {
+          DEFAULT: "var(--secondary)",
+          foreground: "var(--secondary-foreground)",
+        },
+        muted: {
+          DEFAULT: "var(--muted)",
+          foreground: "var(--muted-foreground)",
+        },
+        accent: {
+          DEFAULT: "var(--accent)",
+          foreground: "var(--accent-foreground)",
+        },
+        destructive: {
+          DEFAULT: "var(--destructive)",
+          foreground: "var(--destructive-foreground)",
+        },
+        border: "var(--border)",
+        input: {
+          DEFAULT: "var(--input)",
+          border: "var(--input-border)",
+        },
+        ring: "var(--ring)",
+        success: "var(--success)",
+        /* VSCode 固有トークン (後方互換) */
         vsc: {
           bg: "var(--vscode-editor-background)",
           "bg-secondary": "var(--vscode-sideBar-background)",
@@ -25,6 +65,11 @@ module.exports = {
           scrollbar: "var(--vscode-scrollbarSlider-background)",
           "scrollbar-hover": "var(--vscode-scrollbarSlider-hoverBackground)",
         },
+      },
+      borderRadius: {
+        lg: "var(--radius)",
+        md: "calc(var(--radius) - 2px)",
+        sm: "calc(var(--radius) - 4px)",
       },
       fontFamily: {
         vsc: "var(--vscode-font-family)",

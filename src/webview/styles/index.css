@@ -3,6 +3,43 @@
 @tailwind utilities;
 
 @layer base {
+  /* shadcn/ui CSS 変数 - VSCode テーマ変数にマッピング */
+  :root {
+    --background: var(--vscode-editor-background);
+    --foreground: var(--vscode-editor-foreground);
+
+    --card: var(--vscode-sideBar-background);
+    --card-foreground: var(--vscode-editor-foreground);
+
+    --popover: var(--vscode-dropdown-background, var(--vscode-sideBar-background));
+    --popover-foreground: var(--vscode-dropdown-foreground, var(--vscode-editor-foreground));
+
+    --primary: var(--vscode-button-background);
+    --primary-foreground: var(--vscode-button-foreground);
+    --primary-hover: var(--vscode-button-hoverBackground);
+
+    --secondary: var(--vscode-sideBar-background);
+    --secondary-foreground: var(--vscode-editor-foreground);
+
+    --muted: var(--vscode-list-hoverBackground);
+    --muted-foreground: var(--vscode-descriptionForeground);
+
+    --accent: var(--vscode-list-hoverBackground);
+    --accent-foreground: var(--vscode-editor-foreground);
+
+    --destructive: var(--vscode-errorForeground);
+    --destructive-foreground: var(--vscode-editor-foreground);
+
+    --border: var(--vscode-panel-border);
+    --input: var(--vscode-input-background);
+    --input-border: var(--vscode-input-border, var(--vscode-panel-border));
+    --ring: var(--vscode-focusBorder);
+
+    --success: var(--vscode-testing-iconPassed);
+
+    --radius: 0.375rem;
+  }
+
   *,
   *::before,
   *::after {
@@ -58,22 +95,20 @@
     font-family: Georgia, "Noto Serif JP", serif;
   }
 
-  /* セリフ体の太字（日本語など）はゴシック体に */
-  .app-font-serif b, 
-  .app-font-serif strong, 
-  .app-font-serif h1, 
-  .app-font-serif h2, 
-  .app-font-serif h3, 
-  .app-font-serif h4, 
-  .app-font-serif h5, 
-  .app-font-serif h6, 
+  .app-font-serif b,
+  .app-font-serif strong,
+  .app-font-serif h1,
+  .app-font-serif h2,
+  .app-font-serif h3,
+  .app-font-serif h4,
+  .app-font-serif h5,
+  .app-font-serif h6,
   .app-font-serif th {
     font-family: -apple-system, BlinkMacSystemFont, Roboto, "Helvetica Neue", Arial, "Noto Sans JP", sans-serif;
   }
 }
 
 @layer components {
-  /* Inline code */
   .inline-code {
     @apply rounded px-1.5 py-0.5 text-[0.9em] font-medium;
     font-family: var(--vscode-editor-font-family);
@@ -112,7 +147,7 @@
 
   .markdown-body h5,
   .markdown-body h6 {
-    @apply text-[0.95em] font-semibold mt-2 mb-1 text-vsc-fg-secondary;
+    @apply text-[0.95em] font-semibold mt-2 mb-1 text-muted-foreground;
   }
 
   .markdown-body h1:first-child,
@@ -157,14 +192,12 @@
   }
 
   .markdown-body blockquote {
-    @apply border-l-2 pl-3 my-2 italic;
-    border-color: var(--vscode-button-background);
-    color: var(--vscode-descriptionForeground);
+    @apply border-l-2 pl-3 my-2 italic text-muted-foreground;
+    border-color: var(--primary);
   }
 
   .markdown-body hr {
-    @apply my-3 border-0 border-t;
-    border-color: rgba(127, 127, 127, 0.3);
+    @apply my-3 border-0 border-t border-border;
   }
 
   .markdown-body a {
@@ -182,13 +215,11 @@
 
   .markdown-body th,
   .markdown-body td {
-    @apply px-2.5 py-1.5 text-left;
-    border: 1px solid rgba(127, 127, 127, 0.25);
+    @apply px-2.5 py-1.5 text-left border border-border;
   }
 
   .markdown-body th {
-    @apply font-semibold;
-    background: var(--vscode-list-hoverBackground);
+    @apply font-semibold bg-muted;
   }
 
   .markdown-body tr:nth-child(even) {
@@ -203,13 +234,11 @@
     @apply max-w-full rounded-md my-2;
   }
 
-  /* Code inside pre (code blocks) should NOT have inline-code styling */
   .markdown-body pre code {
     all: unset;
     font-family: var(--vscode-editor-font-family);
   }
 
-  /* highlight.js code blocks - reset background to blend with container */
   .hljs {
     background: transparent !important;
     padding: 0 !important;

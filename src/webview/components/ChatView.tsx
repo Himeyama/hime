@@ -1,10 +1,12 @@
 import React from "react";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
+import { AlertCircle } from "lucide-react";
 import { Chat, ProviderType, ToolCall } from "../../types/chat";
 import { MessageList } from "./MessageList";
 import { InputArea } from "./InputArea";
 import { ProviderSelect } from "./ProviderSelect";
+import { Button } from "./ui/button";
 
 interface ChatViewProps {
   className?: string;
@@ -45,7 +47,7 @@ export function ChatView({
 }: ChatViewProps) {
   if (!chat) {
     return (
-      <div className={`flex items-center justify-center flex-1 text-vsc-fg-secondary px-6 ${className || ""}`}>
+      <div className={`flex items-center justify-center flex-1 text-muted-foreground px-6 ${className || ""}`}>
         <div className="text-center">
           <svg width="48" height="48" viewBox="0 0 48 48" fill="none" className="mx-auto mb-3 opacity-20" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
             <path d="M6 36V12a4 4 0 0 1 4-4h28a4 4 0 0 1 4 4v18a4 4 0 0 1-4 4H14l-8 6z" />
@@ -62,28 +64,20 @@ export function ChatView({
   return (
     <div className="flex flex-col flex-1 overflow-hidden">
       {/* ツールバー */}
-      <div className="flex items-center gap-1.5 px-3 py-1.5 border-b border-vsc-border/50">
+      <div className="flex items-center gap-1.5 px-3 py-1.5 border-b border-border">
         <ProviderSelect selected={selectedProvider} onChange={onProviderChange} />
         <div className="flex-1" />
-        <button
-          className="bg-transparent border border-vsc-border text-vsc-fg cursor-pointer px-2.5 py-0.5 rounded-md text-xs hover:bg-vsc-bg-hover transition-colors"
-          onClick={onClearContext}
-          title="コンテキストクリア"
-        >
+        <Button variant="outline" size="sm" onClick={onClearContext} title="コンテキストクリア">
           クリア
-        </button>
-        <button
-          className="bg-transparent border border-vsc-border text-vsc-fg cursor-pointer px-2.5 py-0.5 rounded-md text-xs hover:bg-vsc-bg-hover transition-colors"
-          onClick={onCompressContext}
-          title="コンテキスト圧縮"
-        >
+        </Button>
+        <Button variant="outline" size="sm" onClick={onCompressContext} title="コンテキスト圧縮">
           圧縮
-        </button>
+        </Button>
       </div>
 
       {/* ドキュメント読み込み通知 */}
       {loadedContextFiles && loadedContextFiles.length > 0 && (
-        <div className="px-3 py-1.5 text-[11px] text-vsc-fg-secondary border-b border-vsc-border/30 bg-vsc-bg-hover/30 animate-fade-in text-center">
+        <div className="px-3 py-1.5 text-[11px] text-muted-foreground border-b border-border bg-muted/30 animate-fade-in text-center">
           {loadedContextFiles.join(", ")} を読み込みました
         </div>
       )}
@@ -100,32 +94,27 @@ export function ChatView({
       {skillsHelp && (
         <div className="flex-1 overflow-y-auto px-4 py-4 animate-fade-in">
           <div className="max-w-3xl mx-auto">
-            <div className="prose prose-sm text-vsc-fg bg-vsc-bg-hover/30 rounded-xl p-5 border border-vsc-border/50">
+            <div className="prose prose-sm text-foreground bg-muted/30 rounded-lg p-5 border border-border">
               <ReactMarkdown remarkPlugins={[remarkGfm]}>{skillsHelp}</ReactMarkdown>
             </div>
             <div className="flex justify-center mt-3">
-              <button
-                className="bg-transparent border border-vsc-border text-vsc-fg-secondary cursor-pointer px-4 py-1.5 rounded-lg text-xs hover:bg-vsc-bg-hover transition-colors"
-                onClick={onDismissSkillsHelp}
-              >
+              <Button variant="outline" size="sm" onClick={onDismissSkillsHelp}>
                 閉じる
-              </button>
+              </Button>
             </div>
           </div>
         </div>
       )}
 
       {error && (
-        <div className="bg-red-500/10 text-vsc-danger px-3 py-2 text-xs border-t border-vsc-danger/30 animate-fade-in flex items-center gap-1.5">
-          <svg width="12" height="12" viewBox="0 0 16 16" fill="currentColor">
-            <path d="M8 16A8 8 0 1 0 8 0a8 8 0 0 0 0 16zM8 4a.75.75 0 0 1 .75.75v3.5a.75.75 0 0 1-1.5 0v-3.5A.75.75 0 0 1 8 4zm0 8a1 1 0 1 1 0-2 1 1 0 0 1 0 2z" />
-          </svg>
+        <div className="bg-destructive/10 text-destructive px-3 py-2 text-xs border-t border-destructive/30 animate-fade-in flex items-center gap-1.5">
+          <AlertCircle className="h-3 w-3 shrink-0" />
           {error}
         </div>
       )}
 
       {/* 入力エリア */}
-      <div className="border-t border-vsc-border/40 px-4 py-4 bg-vsc-bg/80 backdrop-blur-md sticky bottom-0 z-10">
+      <div className="border-t border-border px-4 py-4 bg-background/80 backdrop-blur-md sticky bottom-0 z-10">
         <div className="max-w-4xl mx-auto">
           <InputArea
             onSend={onSendMessage}
