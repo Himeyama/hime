@@ -810,11 +810,16 @@ async function executeCommand(
       cwd: workspacePath,
       timeout,
       maxBuffer: MAX_OUTPUT_CHARS * 4,
-      ...(isPs ? { shell: "pwsh" } : {}),
     };
 
-    // For PowerShell, wrap the command
-    const actualCommand = isPs ? `pwsh -NonInteractive -Command "${command.replace(/"/g, '\\"')}"` : command;
+    // For PowerShell, use -EncodedCommand (base64 UTF-16LE) to avoid all quoting issues.
+    // Prepend UTF-8 output encoding setup so that Japanese/emoji characters are not garbled.
+    const actualCommand = isPs
+      ? `pwsh -NonInteractive -EncodedCommand ${Buffer.from(
+          "[Console]::OutputEncoding = [System.Text.Encoding]::UTF8; $OutputEncoding = [System.Text.Encoding]::UTF8; " + command,
+          "utf16le"
+        ).toString("base64")}`
+      : command;
 
     cp.exec(actualCommand, options, (err, stdout, stderr) => {
       const out = stdout || "";
