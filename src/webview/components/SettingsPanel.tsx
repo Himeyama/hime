@@ -1,6 +1,5 @@
 import React, { useState } from "react";
-import * as Collapsible from "@radix-ui/react-collapsible";
-import { ChevronRight, Code2, X, Eye, EyeOff, Check, AlertCircle, RefreshCw } from "lucide-react";
+import { Code2, X, Eye, EyeOff, Check, AlertCircle, RefreshCw } from "lucide-react";
 import { ProviderType } from "../../types/chat";
 import { AppSettings, ProviderSettings } from "../../types/messages";
 import { Button } from "./ui/button";
@@ -9,6 +8,7 @@ import { Textarea } from "./ui/textarea";
 import { Label } from "./ui/label";
 import { Switch } from "./ui/switch";
 import { Separator } from "./ui/separator";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "./ui/select";
 import { cn } from "../lib/utils";
 
 interface SettingsPanelProps {
@@ -45,7 +45,7 @@ export function SettingsPanel({
   onOpenSettingsJson,
   onClose,
 }: SettingsPanelProps) {
-  const [expandedProvider, setExpandedProvider] = useState<ProviderType | null>(null);
+  const [selectedProvider, setSelectedProvider] = useState<ProviderType>("anthropic");
   const [apiKeyInputs, setApiKeyInputs] = useState<Record<string, string>>({});
   const [showApiKey, setShowApiKey] = useState<Record<string, boolean>>({});
   const [mcpJson, setMcpJson] = useState<string>(
@@ -100,148 +100,147 @@ export function SettingsPanel({
       </div>
 
       {/* プロバイダーセクション */}
-      {(Object.keys(PROVIDER_NAMES) as ProviderType[]).map((provider) => (
-        <Collapsible.Root
-          key={provider}
-          open={expandedProvider === provider}
-          onOpenChange={(open) => setExpandedProvider(open ? provider : null)}
-          className="mb-0.5"
-        >
-          <Collapsible.Trigger className="w-full flex items-center gap-1.5 px-0 py-1.5 text-[13px] text-foreground hover:text-primary transition-colors select-none cursor-pointer bg-transparent border-none text-left rounded">
-            <ChevronRight
-              className={cn(
-                "h-3 w-3 text-muted-foreground transition-transform duration-200 shrink-0",
-                expandedProvider === provider && "rotate-90"
-              )}
-            />
-            <span className="font-medium">{PROVIDER_NAMES[provider]}</span>
-          </Collapsible.Trigger>
+      <div className="space-y-4">
+        <div className="space-y-2">
+          <Label>プロバイダー設定</Label>
+          <Select value={selectedProvider} onValueChange={(v) => setSelectedProvider(v as ProviderType)}>
+            <SelectTrigger className="w-full">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent sideOffset={4}>
+              {(Object.keys(PROVIDER_NAMES) as ProviderType[]).map((provider) => (
+                <SelectItem key={provider} value={provider}>
+                  {PROVIDER_NAMES[provider]}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
 
-          <Collapsible.Content className="pl-4 pb-2.5 pt-1 space-y-2.5">
-            {/* APIキー */}
-            {provider !== "ollama" && (
-              <div className="space-y-1">
-                <Label>
-                  {provider === "google" ? "API キー (Gemini Developer API 用)" : "APIキー"}
-                </Label>
-                <div className="flex gap-1 items-center">
-                  <Input
-                    type={showApiKey[provider] ? "text" : "password"}
-                    className="flex-1"
-                    value={apiKeyInputs[provider] || ""}
-                    onChange={(e) =>
-                      setApiKeyInputs((prev) => ({ ...prev, [provider]: e.target.value }))
-                    }
-                    placeholder={hasApiKeys[provider] ? "•••••（設定済み）" : "APIキーを入力"}
-                  />
-                  <Button
-                    variant="ghost"
-                    size="icon-xs"
-                    onClick={() =>
-                      setShowApiKey((prev) => ({ ...prev, [provider]: !prev[provider] }))
-                    }
-                    title={showApiKey[provider] ? "非表示" : "表示"}
-                  >
-                    {showApiKey[provider] ? (
-                      <EyeOff className="h-3.5 w-3.5" />
-                    ) : (
-                      <Eye className="h-3.5 w-3.5" />
-                    )}
-                  </Button>
+        <div className="space-y-2.5 animate-fade-in">
+          {/* APIキー */}
+          {selectedProvider !== "ollama" && (
+            <div className="space-y-1">
+              <Label>
+                {selectedProvider === "google" ? "API キー (Gemini Developer API 用)" : "APIキー"}
+              </Label>
+              <div className="flex gap-1 items-center">
+                <Input
+                  type={showApiKey[selectedProvider] ? "text" : "password"}
+                  className="flex-1"
+                  value={apiKeyInputs[selectedProvider] || ""}
+                  onChange={(e) =>
+                    setApiKeyInputs((prev) => ({ ...prev, [selectedProvider]: e.target.value }))
+                  }
+                  placeholder={hasApiKeys[selectedProvider] ? "•••••（設定済み）" : "APIキーを入力"}
+                />
+                <Button
+                  variant="ghost"
+                  size="icon-xs"
+                  onClick={() =>
+                    setShowApiKey((prev) => ({ ...prev, [selectedProvider]: !prev[selectedProvider] }))
+                  }
+                  title={showApiKey[selectedProvider] ? "非表示" : "表示"}
+                >
+                  {showApiKey[selectedProvider] ? (
+                    <EyeOff className="h-3.5 w-3.5" />
+                  ) : (
+                    <Eye className="h-3.5 w-3.5" />
+                  )}
+                </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => handleSetApiKey(selectedProvider)}
+                >
+                  保存
+                </Button>
+                {hasApiKeys[selectedProvider] && (
                   <Button
                     variant="outline"
                     size="sm"
-                    onClick={() => handleSetApiKey(provider)}
+                    className="border-destructive/50 text-destructive hover:bg-destructive/10"
+                    onClick={() => onDeleteApiKey(selectedProvider)}
                   >
-                    保存
+                    削除
                   </Button>
-                  {hasApiKeys[provider] && (
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      className="border-destructive/50 text-destructive hover:bg-destructive/10"
-                      onClick={() => onDeleteApiKey(provider)}
-                    >
-                      削除
-                    </Button>
-                  )}
-                </div>
+                )}
               </div>
-            )}
+            </div>
+          )}
 
-            {/* エンドポイント / プロジェクト ID */}
+          {/* エンドポイント / プロジェクト ID */}
+          <div className="space-y-1">
+            <Label>
+              {selectedProvider === "google" ? "プロジェクト ID (Vertex AI 用)" : "エンドポイント"}
+            </Label>
+            <Input
+              type="text"
+              value={settings.providers[selectedProvider]?.endpoint || ""}
+              onChange={(e) => updateProviderSetting(selectedProvider, "endpoint", e.target.value)}
+              placeholder="デフォルト"
+            />
+          </div>
+
+          {/* デプロイメント名（Azure）/ リージョン（Google） */}
+          {(selectedProvider === "azure-openai" || selectedProvider === "google") && (
             <div className="space-y-1">
               <Label>
-                {provider === "google" ? "プロジェクト ID (Vertex AI 用)" : "エンドポイント"}
+                {selectedProvider === "google" ? "リージョン (Vertex AI 用)" : "デプロイメント名"}
               </Label>
               <Input
                 type="text"
-                value={settings.providers[provider]?.endpoint || ""}
-                onChange={(e) => updateProviderSetting(provider, "endpoint", e.target.value)}
-                placeholder="デフォルト"
+                value={settings.providers[selectedProvider]?.deploymentName || ""}
+                onChange={(e) => updateProviderSetting(selectedProvider, "deploymentName", e.target.value)}
               />
             </div>
+          )}
 
-            {/* デプロイメント名（Azure）/ リージョン（Google） */}
-            {(provider === "azure-openai" || provider === "google") && (
-              <div className="space-y-1">
-                <Label>
-                  {provider === "google" ? "リージョン (Vertex AI 用)" : "デプロイメント名"}
-                </Label>
-                <Input
-                  type="text"
-                  value={settings.providers[provider]?.deploymentName || ""}
-                  onChange={(e) => updateProviderSetting(provider, "deploymentName", e.target.value)}
-                />
-              </div>
-            )}
+          {/* モデル */}
+          <div className="space-y-1">
+            <Label>モデル</Label>
+            <Input
+              type="text"
+              value={settings.providers[selectedProvider]?.model || ""}
+              onChange={(e) => updateProviderSetting(selectedProvider, "model", e.target.value)}
+            />
+          </div>
 
-            {/* モデル */}
-            <div className="space-y-1">
-              <Label>モデル</Label>
-              <Input
-                type="text"
-                value={settings.providers[provider]?.model || ""}
-                onChange={(e) => updateProviderSetting(provider, "model", e.target.value)}
-              />
-            </div>
+          {/* 接続テスト */}
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => onTestConnection(selectedProvider)}
+          >
+            接続テスト
+          </Button>
 
-            {/* 接続テスト */}
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => onTestConnection(provider)}
+          {connectionTestResult?.provider === selectedProvider && (
+            <div
+              className={cn(
+                "text-xs px-2.5 py-1.5 rounded-md animate-fade-in flex items-center gap-1.5",
+                connectionTestResult.success
+                  ? "text-success bg-success/10"
+                  : "text-destructive bg-destructive/10"
+              )}
             >
-              接続テスト
-            </Button>
+              {connectionTestResult.success ? (
+                <>
+                  <Check className="h-3 w-3 shrink-0" />
+                  接続成功
+                </>
+              ) : (
+                <>
+                  <AlertCircle className="h-3 w-3 shrink-0" />
+                  {connectionTestResult.error}
+                </>
+              )}
+            </div>
+          )}
+        </div>
+      </div>
 
-            {connectionTestResult?.provider === provider && (
-              <div
-                className={cn(
-                  "text-xs px-2.5 py-1.5 rounded-md animate-fade-in flex items-center gap-1.5",
-                  connectionTestResult.success
-                    ? "text-success bg-success/10"
-                    : "text-destructive bg-destructive/10"
-                )}
-              >
-                {connectionTestResult.success ? (
-                  <>
-                    <Check className="h-3 w-3 shrink-0" />
-                    接続成功
-                  </>
-                ) : (
-                  <>
-                    <AlertCircle className="h-3 w-3 shrink-0" />
-                    {connectionTestResult.error}
-                  </>
-                )}
-              </div>
-            )}
-          </Collapsible.Content>
-        </Collapsible.Root>
-      ))}
-
-      <Separator className="my-3" />
+      <Separator className="my-4" />
 
       {/* 共通設定 */}
       <div className="space-y-4">
@@ -260,14 +259,18 @@ export function SettingsPanel({
 
         <div className="space-y-1">
           <Label>フォント設定</Label>
-          <select
-            className="w-full bg-input text-foreground border border-input-border rounded-md px-3 py-1.5 text-xs outline-none focus:border-ring transition-colors"
+          <Select
             value={settings.fontFamily || "serif"}
-            onChange={(e) => onUpdateSettings({ fontFamily: e.target.value as "serif" | "sans-serif" })}
+            onValueChange={(v) => onUpdateSettings({ fontFamily: v as "serif" | "sans-serif" })}
           >
-            <option value="sans-serif">サンセリフ</option>
-            <option value="serif">セリフ</option>
-          </select>
+            <SelectTrigger className="w-full">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent sideOffset={4}>
+              <SelectItem value="sans-serif">サンセリフ</SelectItem>
+              <SelectItem value="serif">セリフ</SelectItem>
+            </SelectContent>
+          </Select>
         </div>
 
         <div className="flex items-center gap-2">
