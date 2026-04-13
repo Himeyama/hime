@@ -78,7 +78,7 @@ export class OpenAIProvider extends BaseProvider {
     const allToolCalls: ToolCall[] = [];
     let iteration = 0;
     const maxIterations = 10;
-    const totalUsage: TokenUsage = { inputTokens: 0, outputTokens: 0 };
+    const totalUsage: TokenUsage = { inputTokens: 0, outputTokens: 0, cacheReadTokens: 0 };
 
     while (iteration < maxIterations) {
       iteration++;
@@ -104,6 +104,7 @@ export class OpenAIProvider extends BaseProvider {
         if (chunk.usage) {
           totalUsage.inputTokens += chunk.usage.prompt_tokens ?? 0;
           totalUsage.outputTokens += chunk.usage.completion_tokens ?? 0;
+          totalUsage.cacheReadTokens = (totalUsage.cacheReadTokens ?? 0) + ((chunk.usage as any).prompt_tokens_details?.cached_tokens ?? 0);
         }
 
         const delta = chunk.choices[0]?.delta;

@@ -128,7 +128,7 @@ export class GoogleProvider extends BaseProvider {
     const allToolCalls: ToolCall[] = [];
     let iteration = 0;
     const maxIterations = 10;
-    const totalUsage: TokenUsage = { inputTokens: 0, outputTokens: 0 };
+    const totalUsage: TokenUsage = { inputTokens: 0, outputTokens: 0, cacheReadTokens: 0 };
 
     while (iteration < maxIterations) {
       iteration++;
@@ -184,6 +184,7 @@ export class GoogleProvider extends BaseProvider {
       if (lastUsageMetadata) {
         totalUsage.inputTokens += lastUsageMetadata.promptTokenCount ?? 0;
         totalUsage.outputTokens += lastUsageMetadata.candidatesTokenCount ?? 0;
+        totalUsage.cacheReadTokens = (totalUsage.cacheReadTokens ?? 0) + (lastUsageMetadata.cachedContentTokenCount ?? 0);
       }
 
       allToolCalls.push(...currentIterationToolCalls);
