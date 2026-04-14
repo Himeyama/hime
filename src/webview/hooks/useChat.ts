@@ -203,6 +203,7 @@ export function useChat() {
       postMessage({ command: "deleteChat", chatId });
       if (currentChat?.id === chatId) {
         setCurrentChat(null);
+        postMessage({ command: "createChat" });
       }
     },
     [postMessage, currentChat]

@@ -1,7 +1,7 @@
 import React from "react";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
-import { AlertCircle } from "lucide-react";
+import { AlertCircle, Minimize2 } from "lucide-react";
 import { Chat, ProviderType, ToolCall } from "../../types/chat";
 import { MessageList } from "./MessageList";
 import { InputArea } from "./InputArea";
@@ -67,11 +67,8 @@ export function ChatView({
       <div className="flex items-center gap-1 px-3 py-1 border-b border-border select-none">
         <ProviderSelect selected={selectedProvider} onChange={onProviderChange} />
         <div className="flex-1" />
-        <Button variant="ghost" size="icon-xs" onClick={onClearContext} title="Clear context">
-          <span className="text-[10px] uppercase font-bold text-muted-foreground/60">Clr</span>
-        </Button>
         <Button variant="ghost" size="icon-xs" onClick={onCompressContext} title="Compress context">
-          <span className="text-[10px] uppercase font-bold text-muted-foreground/60">Cmp</span>
+          <Minimize2 className="h-3 w-3 text-muted-foreground/60" />
         </Button>
       </div>
 

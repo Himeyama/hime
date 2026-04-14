@@ -25,19 +25,9 @@ export function MessageBubble({ message, isStreaming, streamingContent, streamin
 
   return (
     <div className={cn("flex flex-col animate-fade-in last:border-0", isUser ? "items-end bg-muted/5 py-4 px-4" : "items-start")}>
-      {!isUser && (
-        <div className="flex items-center gap-2 px-4 pt-3 select-none">
-          {message.provider && (
-            <span className="text-[9px] text-muted-foreground/40 font-mono">
-              {message.provider}{message.model ? ` · ${message.model}` : ""}
-            </span>
-          )}
-        </div>
-      )}
-
       <div className={cn(
         "max-w-full w-full flex flex-col",
-        isUser ? "items-end px-0" : "px-4 pb-4 pt-0"
+        isUser ? "items-end px-0" : "px-4 py-4"
       )}>
         {(streamingToolCalls || message.toolCalls)?.map((tc) => (
           <div key={tc.id} className="w-full">
@@ -49,44 +39,54 @@ export function MessageBubble({ message, isStreaming, streamingContent, streamin
           "text-vsc leading-relaxed",
           isUser 
             ? "bg-primary text-primary-foreground rounded-2xl rounded-tr-none px-4 py-2.5 shadow-sm whitespace-pre-wrap break-words max-w-[90%]" 
-            : "markdown-body"
+            : "markdown-body relative group"
         )}>
           {isUser ? (
             content
           ) : (
-            <ReactMarkdown
-              remarkPlugins={[remarkGfm]}
-              components={{
-                a({ children, href, ...props }) {
-                  return (
-                    <a href={href} target="_blank" rel="noopener noreferrer" {...props}>
-                      {children}
-                    </a>
-                  );
-                },
-                code({ className, children, ...props }) {
-                  const match = /language-(\w+)/.exec(className || "");
-                  const codeStr = String(children).replace(/\n$/, "");
-                  if (match) {
-                    return <CodeBlock language={match[1]} code={codeStr} />;
-                  }
-                  return (
-                    <code className="inline-code" {...props}>
-                      {children}
-                    </code>
-                  );
-                },
-                pre({ children }) {
-                  const child = React.Children.toArray(children)[0];
-                  if (React.isValidElement(child) && child.type === CodeBlock) {
-                    return <>{children}</>;
-                  }
-                  return <pre>{children}</pre>;
-                },
-              }}
-            >
-              {content}
-            </ReactMarkdown>
+            <>
+              <ReactMarkdown
+                remarkPlugins={[remarkGfm]}
+                components={{
+                  a({ children, href, ...props }) {
+                    return (
+                      <a href={href} target="_blank" rel="noopener noreferrer" {...props}>
+                        {children}
+                      </a>
+                    );
+                  },
+                  code({ className, children, ...props }) {
+                    const match = /language-(\w+)/.exec(className || "");
+                    const codeStr = String(children).replace(/\n$/, "");
+                    if (match) {
+                      return <CodeBlock language={match[1]} code={codeStr} />;
+                    }
+                    return (
+                      <code className="inline-code" {...props}>
+                        {children}
+                      </code>
+                    );
+                  },
+                  pre({ children }) {
+                    const child = React.Children.toArray(children)[0];
+                    if (React.isValidElement(child) && child.type === CodeBlock) {
+                      return <>{children}</>;
+                    }
+                    return <pre>{children}</pre>;
+                  },
+                }}
+              >
+                {content}
+              </ReactMarkdown>
+              
+              {!isUser && message.provider && (
+                <div className="flex justify-end mt-2 select-none">
+                  <span className="text-[10px] text-muted-foreground/30 font-mono italic group-hover:text-muted-foreground/60 transition-colors">
+                    {message.provider}{message.model ? ` · ${message.model}` : ""}
+                  </span>
+                </div>
+              )}
+            </>
           )}
 
           {isStreaming && !isUser && (
