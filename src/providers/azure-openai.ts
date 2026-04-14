@@ -218,7 +218,7 @@ export class AzureOpenAIProvider extends BaseProvider {
   }
 
   async listModels(): Promise<string[]> {
-    return ["gpt-4o", "gpt-4o-mini", "gpt-4"];
+    return ["o1-preview", "o1-mini", "gpt-4o", "gpt-4o-mini", "gpt-4-turbo", "gpt-4", "gpt-35-turbo"];
   }
 
   async testConnection(): Promise<boolean> {

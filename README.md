@@ -36,15 +36,26 @@ npm install
 ## ビルド
 
 ```powershell
-# 型チェックのみ
+# 型チェック
 npm run check-types
 
-# Extension Host + Webview の両方をウォッチモードで起動
+# 開発用：Extension Host + Webview の両方をウォッチモードで起動
 npm run watch
 
-# プロダクションビルド（minify付き）
+# 本番用：プロダクションビルド（minify付き）を実行して dist/ を生成
 npm run package
 ```
+
+### パッケージ作成 (.vsix)
+
+VS Code にインストール可能な拡張機能パッケージを作成するには、以下のコマンドを実行します。
+
+```powershell
+# vsce を使用して .vsix ファイルを作成
+npx @vscode/vsce package --skip-license
+```
+
+作成された `.vsix` ファイルは、VS Code の「Extensions: Install from VSIX...」コマンドからインストールできます。
 
 ## コマンド
 
