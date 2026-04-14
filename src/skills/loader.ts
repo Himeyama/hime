@@ -70,15 +70,19 @@ $ARGUMENTS
 4. **依存関係** — 使用している主要な外部ライブラリ・モジュールとその役割
 
 初級〜中級開発者が理解できるレベルで、簡潔かつ正確に説明してください。`,
-  },
-  {
-    name: "review",
-    description: "選択コードまたはアクティブファイルのコードレビューを実施",
-    source: "builtin",
-    prompt: `以下のコードをレビューしてください。
-
-{{selection}}
+},
+{
+  name: "review",
+  description: "選択コードまたはアクティブファイルのコードレビューを実施",
+  source: "builtin",
+  prompt: `以下のコードをレビューしてください。
+  
 ファイル: {{activeFile}}
+
+\`\`\`
+{{selection}}
+\`\`\`
+
 $ARGUMENTS
 
 対象コードが選択されていない場合は、Read ツールでアクティブファイルを読み込んでレビューしてください。
@@ -105,8 +109,12 @@ $ARGUMENTS
     source: "builtin",
     prompt: `以下のコードの問題を修正してください。
 
-{{selection}}
 ファイル: {{activeFile}}
+
+\`\`\`
+{{selection}}
+\`\`\`
+
 $ARGUMENTS
 
 修正の手順：
@@ -124,8 +132,12 @@ $ARGUMENTS
     source: "builtin",
     prompt: `以下のコードに対するテストを生成してください。
 
-{{selection}}
 ファイル: {{activeFile}}
+
+\`\`\`
+{{selection}}
+\`\`\`
+
 $ARGUMENTS
 
 テスト生成の手順：
