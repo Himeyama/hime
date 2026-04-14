@@ -18,11 +18,11 @@ const BUILTIN_SKILLS: SkillDefinition[] = [
     source: "builtin",
     prompt: `ステージング済みの変更を確認し、適切なコミットメッセージを生成してコミットしてください。
 
-手順：
+手順:
 1. \`git diff --staged\` でステージ済みの変更を確認する
 2. ステージ済みの変更がなければ \`git status\` を確認して報告する (コミットしない)
 3. 変更内容を分析して、Conventional Commits 形式のコミットメッセージを生成する
-   - 形式: \`<type>(<scope>): <description>\`
+   - 形式: \`<type>: <description>\`
    - type: feat, fix, docs, style, refactor, test, chore など
    - description は日本語で簡潔に (72文字以内) 
    - 変更が複数ファイル・複数目的にわたる場合は本文も追加
