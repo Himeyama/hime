@@ -128,13 +128,11 @@
   }
 
   .markdown-body h1 {
-    @apply text-[1.4em] font-bold mt-4 mb-2 pb-1 border-b;
-    border-color: rgba(127, 127, 127, 0.2);
+    @apply text-[1.4em] font-bold mt-4 mb-2 pb-1;
   }
 
   .markdown-body h2 {
-    @apply text-[1.2em] font-bold mt-3.5 mb-2 pb-1 border-b;
-    border-color: rgba(127, 127, 127, 0.15);
+    @apply text-[1.2em] font-bold mt-3.5 mb-2 pb-1;
   }
 
   .markdown-body h3 {
