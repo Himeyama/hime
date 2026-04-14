@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from "react";
 import { Check, Copy } from "lucide-react";
 import hljs from "highlight.js";
+import mermaid from "mermaid";
 import { Button } from "./ui/button";
 
 interface CodeBlockProps {
@@ -8,12 +9,61 @@ interface CodeBlockProps {
   code: string;
 }
 
+// Mermaid component to handle diagram rendering
+function Mermaid({ code }: { code: string }) {
+  const ref = useRef<HTMLDivElement>(null);
+  const [svg, setSvg] = useState("");
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    // Detect VSCode theme
+    const isDark = document.body.classList.contains("vscode-dark") || 
+                   document.body.classList.contains("vscode-high-contrast");
+    
+    mermaid.initialize({
+      startOnLoad: false,
+      theme: isDark ? "dark" : "default",
+      securityLevel: "loose",
+      fontFamily: "var(--vscode-editor-font-family)",
+    });
+
+    const renderMermaid = async () => {
+      if (!ref.current) return;
+      try {
+        // Clear previous content to avoid mermaid conflicts
+        const id = `mermaid-${Math.random().toString(36).substr(2, 9)}`;
+        const { svg } = await mermaid.render(id, code);
+        setSvg(svg);
+        setError(null);
+      } catch (err) {
+        console.error("Mermaid rendering failed:", err);
+        setError("Mermaid diagram rendering failed");
+      }
+    };
+
+    renderMermaid();
+  }, [code]);
+
+  if (error) {
+    return <div className="text-destructive text-xs p-2 font-mono whitespace-pre-wrap">{error}</div>;
+  }
+
+  return (
+    <div 
+      ref={ref} 
+      className="flex justify-center p-4 bg-background/50 rounded-md overflow-x-auto"
+      dangerouslySetInnerHTML={{ __html: svg }} 
+    />
+  );
+}
+
 export function CodeBlock({ language, code }: CodeBlockProps) {
   const [copied, setCopied] = useState(false);
   const codeRef = useRef<HTMLElement>(null);
+  const isMermaid = language?.toLowerCase() === "mermaid";
 
   useEffect(() => {
-    if (!codeRef.current) return;
+    if (!codeRef.current || isMermaid) return;
 
     codeRef.current.removeAttribute("data-highlighted");
     codeRef.current.textContent = code;
@@ -29,7 +79,7 @@ export function CodeBlock({ language, code }: CodeBlockProps) {
         // Leave as plain text
       }
     }
-  }, [code, language]);
+  }, [code, language, isMermaid]);
 
   const handleCopy = async () => {
     await navigator.clipboard.writeText(code);
@@ -61,14 +111,20 @@ export function CodeBlock({ language, code }: CodeBlockProps) {
           )}
         </Button>
       </div>
-      <pre className="px-3 py-3 overflow-x-auto font-vsc-editor text-[13px] leading-snug m-0 scrollbar-thin bg-transparent">
-        <code
-          ref={codeRef}
-          className={language ? `language-${language}` : ""}
-        >
-          {code}
-        </code>
-      </pre>
+      {isMermaid ? (
+        <div className="p-3 bg-transparent">
+          <Mermaid code={code} />
+        </div>
+      ) : (
+        <pre className="px-3 py-3 overflow-x-auto font-vsc-editor text-[13px] leading-snug m-0 scrollbar-thin bg-transparent">
+          <code
+            ref={codeRef}
+            className={language ? `language-${language}` : ""}
+          >
+            {code}
+          </code>
+        </pre>
+      )}
     </div>
   );
 }

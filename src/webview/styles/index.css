@@ -1,3 +1,5 @@
+@import url('https://fonts.googleapis.com/css2?family=Oranienbaum&display=swap');
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
@@ -92,7 +94,7 @@
   }
 
   .app-font-serif {
-    font-family: Georgia, "Noto Serif JP", serif;
+    font-family: "Oranienbaum", Georgia, "Noto Serif JP", serif;
   }
 
   .app-font-serif b,
@@ -104,7 +106,7 @@
   .app-font-serif h5,
   .app-font-serif h6,
   .app-font-serif th {
-    font-family: Georgia, "Noto Sans JP", -apple-system, BlinkMacSystemFont, Roboto, "Helvetica Neue", Arial, sans-serif;
+    font-family: "Oranienbaum", Georgia, "Noto Sans JP", -apple-system, BlinkMacSystemFont, Roboto, "Helvetica Neue", Arial, sans-serif;
   }
 }
 
