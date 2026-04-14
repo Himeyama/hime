@@ -77,7 +77,9 @@ npm run package
 
 ## MCP サーバー設定
 
-ワークスペースルートに `mcp.json` を配置すると、拡張機能起動時に自動接続します。
+ワークスペースルートに `mcp.json` を配置するか、拡張機能の設定パネルから設定を行うと、拡張機能起動時に自動接続します。
+
+### Stdio (標準入出力) 接続例
 
 ```json
 {
@@ -85,6 +87,20 @@ npm run package
     "filesystem": {
       "command": "npx",
       "args": ["-y", "@modelcontextprotocol/server-filesystem", "/path/to/workspace"]
+    }
+  }
+}
+```
+
+### SSE (HTTP) 接続例
+
+URL を指定することで、外部の MCP サーバー（例: draw.io）に接続できます。
+
+```json
+{
+  "mcpServers": {
+    "drawio": {
+      "url": "https://mcp.draw.io/mcp"
     }
   }
 }

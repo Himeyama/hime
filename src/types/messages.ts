@@ -1,4 +1,5 @@
 import { ProviderType, Attachment, ChatMeta, ToolCall } from "./chat";
+import { MCPServerConfig } from "./mcp";
 
 // Webview → Extension
 export type WebviewToExtensionMessage =
@@ -53,17 +54,11 @@ export interface ProviderSettings {
   model: string;
 }
 
-export interface MCPServerSettingConfig {
-  command: string;
-  args?: string[];
-  env?: Record<string, string>;
-}
-
 export interface AppSettings {
   defaultProvider: ProviderType;
   providers: Record<ProviderType, ProviderSettings>;
   systemPrompt: string;
   fontFamily?: "serif" | "sans-serif";
-  mcpServers?: Record<string, MCPServerSettingConfig>;
+  mcpServers?: Record<string, MCPServerConfig>;
   autoLoadProjectFiles?: boolean;
 }

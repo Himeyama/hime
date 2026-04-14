@@ -306,7 +306,11 @@ export function SettingsPanel({
             )}
             value={mcpJson}
             onChange={(e) => handleMcpChange(e.target.value)}
-            placeholder='{ "my-server": { "command": "node", "args": ["server.js"] } }'
+            placeholder='{ 
+  "my-server": { "command": "node", "args": ["server.js"] },
+  "drawio-local": { "command": "npx", "args": ["-y", "drawio-mcp-server"] },
+  "sse-server": { "url": "https://mcp.example.com/sse" }
+}'
             rows={8}
             spellCheck={false}
           />

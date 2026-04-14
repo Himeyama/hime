@@ -75,4 +75,38 @@ describe('SettingsStorage', () => {
       'utf-8'
     );
   });
+
+  it('should support SSE-based MCP server settings', async () => {
+    const mockSettings = {
+      defaultProvider: 'anthropic',
+      providers: {
+        anthropic: { model: 'claude-3' }
+      },
+      systemPrompt: '',
+      mcpServers: {
+        'drawio': { url: 'https://mcp.draw.io/mcp' }
+      }
+    };
+
+    vi.mocked(fs.readFile).mockResolvedValue(JSON.stringify(mockSettings));
+    vi.mocked(fs.writeFile).mockResolvedValue(undefined);
+
+    const storage = new SettingsStorage();
+    const settings = await storage.load();
+
+    expect(settings.mcpServers?.drawio.url).toBe('https://mcp.draw.io/mcp');
+
+    await storage.update({ 
+      mcpServers: { 
+        ...settings.mcpServers, 
+        'another': { url: 'http://localhost:3000/mcp' } 
+      } 
+    });
+
+    expect(fs.writeFile).toHaveBeenCalledWith(
+      mockSettingsFile,
+      expect.stringContaining('"url": "http://localhost:3000/mcp"'),
+      'utf-8'
+    );
+  });
 });

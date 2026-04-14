@@ -34,7 +34,7 @@ export async function activate(context: vscode.ExtensionContext) {
   await settingsStorage.initialize();
 
   // Initialize MCP
-  mcpClient = new MCPClientManager();
+  mcpClient = new MCPClientManager(outputChannel);
   toolExecutor = new ToolExecutor(mcpClient);
 
   // Register webview provider

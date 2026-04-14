@@ -1,13 +1,27 @@
 import * as vscode from "vscode";
 import { Client } from "@modelcontextprotocol/sdk/client/index.js";
 import { StdioClientTransport } from "@modelcontextprotocol/sdk/client/stdio.js";
+import { SSEClientTransport } from "@modelcontextprotocol/sdk/client/sse.js";
 import { MCPServerConfig, MCPConfig, MCPTool, MCPToolResult, MCPConnection } from "../types/mcp";
 import * as fs from "fs/promises";
 import * as path from "path";
 
 export class MCPClientManager {
-  private connections: Map<string, { client: Client; transport: StdioClientTransport; tools: MCPTool[] }> = new Map();
+  private connections: Map<string, { client: Client; transport: StdioClientTransport | SSEClientTransport; tools: MCPTool[] }> = new Map();
   private serverStatuses: Map<string, "connected" | "error"> = new Map();
+  private outputChannel?: vscode.OutputChannel;
+
+  constructor(outputChannel?: vscode.OutputChannel) {
+    this.outputChannel = outputChannel;
+  }
+
+  private log(message: string) {
+    if (this.outputChannel) {
+      this.outputChannel.appendLine(`[MCP] ${message}`);
+    } else {
+      console.log(`[MCP] ${message}`);
+    }
+  }
 
   async loadConfig(workspacePath: string): Promise<MCPConfig | null> {
     try {
@@ -20,45 +34,92 @@ export class MCPClientManager {
   }
 
   async connectAll(workspacePath: string, mcpServers?: Record<string, MCPServerConfig>): Promise<void> {
+    this.log("Connecting to all MCP servers...");
     await this.disconnectAll();
     this.serverStatuses.clear();
 
     let servers = mcpServers;
-    if (!servers) {
+    // Load from mcp.json if mcpServers is not provided or is an empty object
+    if (!servers || Object.keys(servers).length === 0) {
       const config = await this.loadConfig(workspacePath);
       if (config) {
         servers = config.mcpServers;
       }
     }
 
-    if (!servers) return;
+    if (!servers) {
+      this.log("No MCP servers configured.");
+      return;
+    }
+
+    // Handle cases where the config might be nested under "mcpServers"
+    // (e.g. when someone copy-pastes a full mcp.json into settings)
+    if (servers.mcpServers && typeof servers.mcpServers === "object" && !servers.mcpServers.command && !servers.mcpServers.url) {
+      this.log("Detected nested 'mcpServers' configuration, unwrapping...");
+      servers = servers.mcpServers as Record<string, MCPServerConfig>;
+    }
 
     for (const [name, serverConfig] of Object.entries(servers)) {
       try {
         await this.connect(name, serverConfig);
         this.serverStatuses.set(name, "connected");
-      } catch (err) {
-        console.error(`Failed to connect to MCP server "${name}":`, err);
+      } catch (err: any) {
+        this.log(`Failed to connect to MCP server "${name}": ${err.message || err}`);
         this.serverStatuses.set(name, "error");
       }
     }
   }
 
   async connect(name: string, serverConfig: MCPServerConfig): Promise<void> {
-    const isWindows = process.platform === "win32";
-    const command = isWindows && serverConfig.command === "npx" ? "npx.cmd" : serverConfig.command;
+    let transport: StdioClientTransport | SSEClientTransport;
 
-    const transport = new StdioClientTransport({
-      command: command,
-      args: serverConfig.args,
-      env: {
-        ...(process.env as Record<string, string>),
-        ...(serverConfig.env as Record<string, string> | undefined),
-      },
-    });
+    if (serverConfig.url) {
+      const sseUrl = new URL(serverConfig.url);
+      this.log(`Connecting to "${name}" via SSE: ${sseUrl.toString()}`);
+      
+      const headers = {
+        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
+        "Accept": "*/*",
+        "mcp-protocol-version": "2024-11-05",
+      };
+
+      transport = new SSEClientTransport(sseUrl, {
+        requestInit: {
+          headers: headers,
+        },
+        eventSourceInit: {
+          headers: headers,
+        } as any,
+      });
+    } else if (serverConfig.command) {
+      const args = serverConfig.args || [];
+      this.log(`Connecting to "${name}" via stdio: ${serverConfig.command} ${args.join(" ")}`);
+      const isWindows = process.platform === "win32";
+      const command = isWindows && serverConfig.command === "npx" ? "npx.cmd" : serverConfig.command;
+
+      transport = new StdioClientTransport({
+        command: command,
+        args: args,
+        env: {
+          ...(process.env as Record<string, string>),
+          ...(serverConfig.env as Record<string, string> | undefined),
+        },
+      });
+    } else {
+      throw new Error(`Invalid MCP server configuration for "${name}": neither "command" nor "url" provided.`);
+    }
 
     const client = new Client({ name: "hime", version: "0.1.0" }, { capabilities: {} });
-    await client.connect(transport);
+
+    try {
+      await client.connect(transport);
+    } catch (err: any) {
+      this.log(`Connection error for "${name}": ${err.message || err}`);
+      if (err.stack) {
+        this.log(`Stack trace: ${err.stack}`);
+      }
+      throw err;
+    }
 
     // List available tools
     const toolsResult = await client.listTools();
@@ -68,6 +129,7 @@ export class MCPClientManager {
       inputSchema: t.inputSchema as Record<string, unknown>,
     }));
 
+    this.log(`Connected to "${name}" with ${tools.length} tools.`);
     this.connections.set(name, { client, transport, tools });
   }
 

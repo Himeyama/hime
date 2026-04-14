@@ -1,7 +1,8 @@
 export interface MCPServerConfig {
-  command: string;
+  command?: string;
   args?: string[];
   env?: Record<string, string>;
+  url?: string;
 }
 
 export interface MCPConfig {
