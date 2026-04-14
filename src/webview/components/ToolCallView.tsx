@@ -35,7 +35,7 @@ export function ToolCallView({ toolCall }: ToolCallViewProps) {
       <div className="flex flex-col gap-1 mb-1.5">
         <div className="flex items-center gap-2">
           <StatusDot status={toolCall.status} />
-          <span className="text-[11px] font-vsc font-bold text-muted-foreground uppercase tracking-wider">
+          <span className="text-[11px] font-vsc font-bold text-muted-foreground uppercase tracking-wider select-none">
             {toolCall.name}
           </span>
           {hasArgs && isLongArgs && (
@@ -66,7 +66,7 @@ export function ToolCallView({ toolCall }: ToolCallViewProps) {
       {(result || isRunning) && (
         <div
           className={cn(
-            "text-[12px] p-2.5 rounded-lg border font-vsc-editor whitespace-pre-wrap overflow-auto max-h-[300px] scrollbar-thin",
+            "text-[12px] p-2.5 rounded-lg border font-vsc-editor whitespace-pre-wrap overflow-auto max-h-[300px] scrollbar-thin select-none",
             isError
               ? "border-destructive/20 text-destructive/80 bg-card/20"
               : "border-border/20 text-foreground/80 bg-card/20",

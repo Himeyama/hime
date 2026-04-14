@@ -36,7 +36,7 @@ export function MessageList({
   }, [visibleMessages, streamingContent]);
 
   return (
-    <div className={`flex-1 overflow-y-auto px-3 py-4 space-y-4 scrollbar-thin scroll-smooth ${className || ""}`}>
+    <div className={`flex-1 overflow-y-auto scrollbar-thin scroll-smooth ${className || ""}`}>
       {visibleMessages.map((msg) => (
         <MessageBubble
           key={msg.id}
@@ -59,7 +59,7 @@ export function MessageList({
           streamingToolCalls={streamingToolCalls}
         />
       )}
-      <div ref={bottomRef} />
+      <div ref={bottomRef} className="h-4" />
     </div>
   );
 }

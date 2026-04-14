@@ -88,7 +88,7 @@
   }
 
   .app-font-sans {
-    font-family: -apple-system, BlinkMacSystemFont, Roboto, "Helvetica Neue", Arial, "Noto Sans JP", sans-serif;
+    font-family: "Noto Sans JP", -apple-system, BlinkMacSystemFont, Roboto, "Helvetica Neue", Arial, sans-serif;
   }
 
   .app-font-serif {
@@ -104,7 +104,7 @@
   .app-font-serif h5,
   .app-font-serif h6,
   .app-font-serif th {
-    font-family: -apple-system, BlinkMacSystemFont, Roboto, "Helvetica Neue", Arial, "Noto Sans JP", sans-serif;
+    font-family: Georgia, "Noto Sans JP", -apple-system, BlinkMacSystemFont, Roboto, "Helvetica Neue", Arial, sans-serif;
   }
 }
 

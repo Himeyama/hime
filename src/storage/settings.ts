@@ -32,7 +32,6 @@ function createDefaultSettings(): AppSettings {
       },
     },
     systemPrompt: "",
-    fontFamily: "serif",
     mcpServers: {},
     autoLoadProjectFiles: true,
   };
@@ -64,9 +63,6 @@ export class SettingsStorage {
       // Ensure mcpServers exists
       if (!settings.mcpServers) {
         settings.mcpServers = {};
-      }
-      if (!settings.fontFamily) {
-        settings.fontFamily = "serif";
       }
       if (settings.autoLoadProjectFiles === undefined) {
         settings.autoLoadProjectFiles = true;

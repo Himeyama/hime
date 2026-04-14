@@ -64,14 +64,14 @@ export function ChatView({
   return (
     <div className="flex flex-col flex-1 overflow-hidden">
       {/* ツールバー */}
-      <div className="flex items-center gap-1.5 px-3 py-1.5 border-b border-border">
+      <div className="flex items-center gap-1 px-3 py-1 border-b border-border select-none">
         <ProviderSelect selected={selectedProvider} onChange={onProviderChange} />
         <div className="flex-1" />
-        <Button variant="outline" size="sm" onClick={onClearContext} title="コンテキストクリア">
-          クリア
+        <Button variant="ghost" size="icon-xs" onClick={onClearContext} title="Clear context">
+          <span className="text-[10px] uppercase font-bold text-muted-foreground/60">Clr</span>
         </Button>
-        <Button variant="outline" size="sm" onClick={onCompressContext} title="コンテキスト圧縮">
-          圧縮
+        <Button variant="ghost" size="icon-xs" onClick={onCompressContext} title="Compress context">
+          <span className="text-[10px] uppercase font-bold text-muted-foreground/60">Cmp</span>
         </Button>
       </div>
 
@@ -114,7 +114,7 @@ export function ChatView({
       )}
 
       {/* 入力エリア */}
-      <div className="border-t border-border px-4 py-4 bg-background/80 backdrop-blur-md sticky bottom-0 z-10">
+      <div className="border-t border-border px-3 py-3 bg-background sticky bottom-0 z-10">
         <div className="max-w-4xl mx-auto">
           <InputArea
             onSend={onSendMessage}

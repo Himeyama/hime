@@ -47,17 +47,16 @@ export function InputArea({ onSend, disabled, isStreaming, onAbort }: InputAreaP
   useEffect(() => {
     adjustHeight();
   }, [value, adjustHeight]);
-
-  return (
-    <div
-      className={cn(
-        "relative flex flex-col bg-input border rounded-lg transition-all duration-200 overflow-hidden",
-        isFocused ? "border-ring ring-1 ring-ring/20" : "border-input-border"
-      )}
-    >
-      <textarea
-        ref={textareaRef}
-        className="w-full bg-transparent text-foreground px-4 py-3 font-vsc text-vsc resize-none outline-none placeholder:text-muted-foreground min-h-[48px] leading-relaxed"
+return (
+  <div
+    className={cn(
+      "relative flex flex-col bg-input border border-input-border rounded transition-colors duration-200 overflow-hidden",
+      isFocused && "border-ring"
+    )}
+  >
+    <textarea
+      ref={textareaRef}
+      className="w-full bg-transparent text-foreground px-3 py-2.5 font-vsc text-vsc resize-none outline-none placeholder:text-muted-foreground/50 min-h-[42px] leading-relaxed"
         value={value}
         onChange={(e) => setValue(e.target.value)}
         onKeyDown={handleKeyDown}

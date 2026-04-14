@@ -9,6 +9,7 @@ import { useChat } from "./hooks/useChat";
 import { useSettings } from "./hooks/useSettings";
 import { useVSCode } from "./hooks/useVSCode";
 import { ProviderType } from "../types/chat";
+import { cn } from "./lib/utils";
 import "highlight.js/styles/vs.css";
 import "./styles/index.css";
 
@@ -42,42 +43,46 @@ export function App() {
       ? "destructive"
       : "secondary";
 
-  const appFontClass = settingsHook.settings?.fontFamily === "sans-serif" ? "app-font-sans" : "app-font-serif";
+  const appFontClass = settingsHook.settings?.fontFamily
+    ? settingsHook.settings.fontFamily === "sans-serif"
+      ? "app-font-sans"
+      : "app-font-serif"
+    : "";
 
   return (
     <div className="flex flex-col h-screen">
       {/* Header */}
-      <header className="flex justify-between items-center px-3 py-2 border-b border-border bg-card">
+      <header className="flex justify-between items-center px-3 py-1.5 border-b border-border bg-background select-none">
         <div className="flex items-center gap-2">
-          <h1 className="text-sm font-bold tracking-wide bg-gradient-to-r from-purple-400 to-pink-400 bg-clip-text text-transparent">
-            Hime
+          <h1 className="text-xs font-bold tracking-tight text-foreground/80">
+            HIME
           </h1>
-        </div>
-        <div className="flex items-center gap-1">
-          {mcpTotal > 0 && mcpBadgeVariant && (
-            <Badge
-              variant={mcpBadgeVariant as "success" | "destructive" | "secondary"}
-              className="font-mono cursor-default"
-              title={mcpStatus.map((s) => `${s.name}: ${s.status}`).join("\n")}
-            >
-              MCP {mcpConnected}/{mcpTotal}
-            </Badge>
+          {mcpTotal > 0 && (
+            <div 
+              className={cn(
+                "w-1.5 h-1.5 rounded-full shrink-0",
+                mcpConnected === mcpTotal ? "bg-success" : mcpConnected === 0 ? "bg-destructive" : "bg-warning"
+              )}
+              title={`MCP: ${mcpConnected}/${mcpTotal} connected\n${mcpStatus.map((s) => `${s.name}: ${s.status}`).join("\n")}`}
+            />
           )}
+        </div>
+        <div className="flex items-center gap-0.5">
           <Button
             variant="ghost"
-            size="icon-sm"
+            size="icon-xs"
             onClick={() => setShowSettings(!showSettings)}
-            title="設定"
+            title="Settings"
           >
-            <Settings className="h-4 w-4" />
+            <Settings className="h-3.5 w-3.5" />
           </Button>
           <Button
             variant="ghost"
-            size="icon-sm"
+            size="icon-xs"
             onClick={chat.createChat}
-            title="新規チャット"
+            title="New Chat"
           >
-            <Plus className="h-4 w-4" />
+            <Plus className="h-3.5 w-3.5" />
           </Button>
         </div>
       </header>

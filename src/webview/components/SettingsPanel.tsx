@@ -87,7 +87,7 @@ export function SettingsPanel({
   return (
     <div className="flex-1 bg-card overflow-y-auto p-3 scrollbar-thin animate-slide-down">
       {/* ヘッダー */}
-      <div className="flex justify-between items-center mb-3">
+      <div className="flex justify-between items-center mb-3 select-none">
         <h2 className="text-sm font-semibold text-foreground">設定</h2>
         <div className="flex items-center gap-0.5">
           <Button variant="ghost" size="icon-xs" onClick={onOpenSettingsJson} title="settings.json を開く">
@@ -260,13 +260,14 @@ export function SettingsPanel({
         <div className="space-y-1">
           <Label>フォント設定</Label>
           <Select
-            value={settings.fontFamily || "serif"}
-            onValueChange={(v) => onUpdateSettings({ fontFamily: v as "serif" | "sans-serif" })}
+            value={settings.fontFamily || "default"}
+            onValueChange={(v) => onUpdateSettings({ fontFamily: v === "default" ? undefined : (v as "serif" | "sans-serif") })}
           >
             <SelectTrigger className="w-full">
               <SelectValue />
             </SelectTrigger>
             <SelectContent sideOffset={4}>
+              <SelectItem value="default">VSCode 標準</SelectItem>
               <SelectItem value="sans-serif">サンセリフ</SelectItem>
               <SelectItem value="serif">セリフ</SelectItem>
             </SelectContent>
@@ -315,9 +316,9 @@ export function SettingsPanel({
             spellCheck={false}
           />
           {mcpError && (
-            <p className="text-[10px] text-destructive">JSON Error: {mcpError}</p>
+            <p className="text-[10px] text-destructive select-none">JSON Error: {mcpError}</p>
           )}
-          <p className="text-[10px] text-muted-foreground">
+          <p className="text-[10px] text-muted-foreground select-none">
             MCP サーバーの設定を JSON 形式で入力してください。変更は自動的に保存されます。
           </p>
         </div>
