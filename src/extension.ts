@@ -145,7 +145,8 @@ class HimeChatViewProvider implements vscode.WebviewViewProvider {
         }
         case "deleteChat": {
           await chatStorage.deleteChat(message.chatId);
-          await this.sendChatList();
+          const chats = await chatStorage.listChats();
+          this.sendToWebview({ type: "chatListUpdate", chats });
           break;
         }
         case "sendMessage": {
@@ -246,10 +247,10 @@ class HimeChatViewProvider implements vscode.WebviewViewProvider {
         }
         case "addReaction": {
           const chat = await chatStorage.loadChat(message.chatId);
-          const msg = chat.messages.find((m) => m.id === message.messageId);
+          const msg = chat.messages.find((m: Message) => m.id === message.messageId);
           if (msg) {
             const reactions = msg.reactions || [];
-            const existing = reactions.findIndex((r) => r.type === message.reaction);
+            const existing = reactions.findIndex((r: any) => r.type === message.reaction);
             if (existing >= 0) {
               reactions.splice(existing, 1);
             } else {
@@ -286,7 +287,7 @@ class HimeChatViewProvider implements vscode.WebviewViewProvider {
     chat.provider = providerType;
 
     // Auto-title on first message
-    if (chat.messages.filter((m) => m.role === "user").length === 1) {
+    if (chat.messages.filter((m: Message) => m.role === "user").length === 1) {
       chat.title = content.slice(0, 50) + (content.length > 50 ? "..." : "");
     }
 
@@ -429,10 +430,10 @@ class HimeChatViewProvider implements vscode.WebviewViewProvider {
         outputChannel.appendLine(`[tokens] ${parts.join("  ")}`);
       }
       
-      if (!chat.messages.find(m => m.id === messageId)) {
+      if (!chat.messages.find((m: Message) => m.id === messageId)) {
         chat.messages.push(assistantMessage);
       } else {
-        const idx = chat.messages.findIndex(m => m.id === messageId);
+        const idx = chat.messages.findIndex((m: Message) => m.id === messageId);
         chat.messages[idx] = assistantMessage;
       }
       
@@ -509,7 +510,7 @@ class HimeChatViewProvider implements vscode.WebviewViewProvider {
     const chat = await chatStorage.loadChat(chatId);
     const settings = await settingsStorage.load();
     const apiKey = await this.context.secrets.get(`hime.apiKey.${chat.provider}`);
-    const providerSettings = settings.providers[chat.provider];
+    const providerSettings = (settings.providers as any)[chat.provider];
 
     const provider = createProvider({
       type: chat.provider,

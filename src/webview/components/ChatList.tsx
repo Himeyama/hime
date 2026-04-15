@@ -13,15 +13,19 @@ interface ChatListProps {
 }
 
 export function ChatList({ chats, currentChatId, onSelect, onDelete }: ChatListProps) {
+  // Check if currentChatId actually exists in the chats list
+  const currentChatExists = chats.some((c) => c.id === currentChatId);
+  const effectiveValue = currentChatExists ? (currentChatId || undefined) : undefined;
+
   return (
     <div className="flex items-center gap-2 p-2 border-b border-border bg-card animate-slide-down">
       <Select
-        value={currentChatId || undefined}
+        value={effectiveValue}
         onValueChange={onSelect}
         disabled={chats.length === 0}
       >
         <SelectTrigger className="flex-1 min-w-0 h-8 text-xs font-medium bg-background border-border/50">
-          <SelectValue placeholder="チャットを選択..." />
+          <SelectValue placeholder={chats.length === 0 ? "チャットがありません" : "チャットを選択..."} />
         </SelectTrigger>
         <SelectContent sideOffset={4} className="max-w-[300px]">
           {chats.map((chat) => (

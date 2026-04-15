@@ -36,9 +36,11 @@ export class ChatHistoryStorage {
       try {
         const data = await fs.readFile(INDEX_FILE, "utf-8");
         const index: ChatsIndex = JSON.parse(data);
-        return index.chats;
-      } catch {
-        return [];
+        return index.chats || [];
+      } catch (err: any) {
+        if (err.code === "ENOENT") return [];
+        console.error("Failed to read chat index:", err);
+        throw err;
       }
     });
   }
@@ -52,17 +54,21 @@ export class ChatHistoryStorage {
   async saveChat(chat: Chat): Promise<void> {
     return this.enqueue(async () => {
       const filePath = path.join(CHATS_DIR, `${chat.id}.json`);
+      await fs.mkdir(CHATS_DIR, { recursive: true });
       await fs.writeFile(filePath, JSON.stringify(chat, null, 2), "utf-8");
 
-      // We need to read the index inside the queue to ensure we have the latest data
-      let chats: ChatMeta[] = [];
+      let index: ChatsIndex = { chats: [] };
       try {
         const data = await fs.readFile(INDEX_FILE, "utf-8");
-        chats = (JSON.parse(data) as ChatsIndex).chats;
-      } catch {
-        chats = [];
+        index = JSON.parse(data);
+      } catch (err: any) {
+        if (err.code !== "ENOENT") {
+          console.error("Failed to read chat index for saving:", err);
+          throw err;
+        }
       }
 
+      const chats = index.chats || [];
       const meta: ChatMeta = {
         id: chat.id,
         title: chat.title,
@@ -79,7 +85,7 @@ export class ChatHistoryStorage {
         chats.unshift(meta);
       }
 
-      const index: ChatsIndex = { chats };
+      index.chats = chats;
       await fs.writeFile(INDEX_FILE, JSON.stringify(index, null, 2), "utf-8");
     });
   }
@@ -89,20 +95,22 @@ export class ChatHistoryStorage {
       const filePath = path.join(CHATS_DIR, `${id}.json`);
       try {
         await fs.unlink(filePath);
-      } catch {
-        // File may not exist
+      } catch (err: any) {
+        if (err.code !== "ENOENT") throw err;
       }
 
-      let chats: ChatMeta[] = [];
+      let index: ChatsIndex = { chats: [] };
       try {
         const data = await fs.readFile(INDEX_FILE, "utf-8");
-        chats = (JSON.parse(data) as ChatsIndex).chats;
-      } catch {
-        chats = [];
+        index = JSON.parse(data);
+      } catch (err: any) {
+        if (err.code !== "ENOENT") {
+          console.error("Failed to read chat index for deletion:", err);
+          throw err;
+        }
       }
 
-      const filtered = chats.filter((c) => c.id !== id);
-      const index: ChatsIndex = { chats: filtered };
+      index.chats = (index.chats || []).filter((c) => c.id !== id);
       await fs.writeFile(INDEX_FILE, JSON.stringify(index, null, 2), "utf-8");
     });
   }
