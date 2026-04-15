@@ -200,13 +200,17 @@ export function useChat() {
 
   const deleteChat = useCallback(
     (chatId: string) => {
+      // Optimistically update the UI list
+      setChats((prev) => prev.filter((c) => c.id !== chatId));
+      
       postMessage({ command: "deleteChat", chatId });
-      if (currentChat?.id === chatId) {
+      
+      if (currentChatIdRef.current === chatId) {
         setCurrentChat(null);
         postMessage({ command: "createChat" });
       }
     },
-    [postMessage, currentChat]
+    [postMessage]
   );
 
   const clearContext = useCallback(() => {
