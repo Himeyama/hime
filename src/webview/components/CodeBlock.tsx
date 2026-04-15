@@ -16,6 +16,8 @@ function Mermaid({ code }: { code: string }) {
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
+    let isMounted = true;
+    
     // Detect VSCode theme
     const isDark = document.body.classList.contains("vscode-dark") || 
                    document.body.classList.contains("vscode-high-contrast");
@@ -29,29 +31,54 @@ function Mermaid({ code }: { code: string }) {
 
     const renderMermaid = async () => {
       if (!ref.current) return;
+      const id = `mermaid-${Math.random().toString(36).substr(2, 9)}`;
       try {
-        // Clear previous content to avoid mermaid conflicts
-        const id = `mermaid-${Math.random().toString(36).substr(2, 9)}`;
+        // Clear previous content
         const { svg } = await mermaid.render(id, code);
-        setSvg(svg);
-        setError(null);
-      } catch (err) {
+        
+        if (isMounted) {
+          setSvg(svg);
+          setError(null);
+        }
+      } catch (err: any) {
+        // Mermaid might inject error elements into the document.body when it fails.
+        // We try to clean up the specific element mermaid might have created.
+        const errorElement = document.getElementById("d" + id); 
+        if (errorElement) {
+          errorElement.remove();
+        }
+
         console.error("Mermaid rendering failed:", err);
-        setError("Mermaid diagram rendering failed");
+        if (isMounted) {
+          // Provide a clean error message instead of the bomb UI
+          setError("Mermaid diagram rendering failed. Please check your syntax.");
+        }
       }
     };
 
     renderMermaid();
+    
+    return () => {
+      isMounted = false;
+    };
   }, [code]);
 
   if (error) {
-    return <div className="text-destructive text-xs p-2 font-mono whitespace-pre-wrap">{error}</div>;
+    return (
+      <div className="flex flex-col items-center justify-center p-6 bg-destructive/5 rounded-md border border-destructive/20 my-2">
+        <div className="text-destructive font-semibold text-xs mb-1 flex items-center gap-1.5">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+          Render Error
+        </div>
+        <div className="text-muted-foreground text-[11px] font-mono whitespace-pre-wrap text-center opacity-80">{error}</div>
+      </div>
+    );
   }
 
   return (
     <div 
       ref={ref} 
-      className="flex justify-center p-4 bg-background/50 rounded-md overflow-x-auto"
+      className="flex justify-center p-4 bg-background/50 rounded-md overflow-x-auto shadow-inner"
       dangerouslySetInnerHTML={{ __html: svg }} 
     />
   );

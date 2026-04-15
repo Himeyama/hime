@@ -38,6 +38,17 @@ function createDefaultSettings(): AppSettings {
 }
 
 export class SettingsStorage {
+  private queue: Promise<any> = Promise.resolve();
+
+  private async enqueue<T>(operation: () => Promise<T>): Promise<T> {
+    const result = this.queue.then(operation);
+    this.queue = result.then(
+      () => {},
+      () => {}
+    );
+    return result;
+  }
+
   private get baseDir(): string {
     return path.join(os.homedir(), ".hime");
   }
@@ -47,52 +58,73 @@ export class SettingsStorage {
   }
 
   async initialize(): Promise<void> {
-    await fs.mkdir(this.baseDir, { recursive: true });
-    try {
-      await fs.access(this.settingsFile);
-    } catch {
-      const defaults = createDefaultSettings();
-      await fs.writeFile(this.settingsFile, JSON.stringify(defaults, null, 2), "utf-8");
-    }
+    return this.enqueue(async () => {
+      await fs.mkdir(this.baseDir, { recursive: true });
+      try {
+        await fs.access(this.settingsFile);
+      } catch {
+        const defaults = createDefaultSettings();
+        await fs.writeFile(this.settingsFile, JSON.stringify(defaults, null, 2), "utf-8");
+      }
+    });
   }
 
   async load(): Promise<AppSettings> {
-    try {
-      const data = await fs.readFile(this.settingsFile, "utf-8");
-      const settings = JSON.parse(data) as AppSettings;
-      // Ensure mcpServers exists
-      if (!settings.mcpServers) {
-        settings.mcpServers = {};
+    return this.enqueue(async () => {
+      try {
+        const data = await fs.readFile(this.settingsFile, "utf-8");
+        const settings = JSON.parse(data) as AppSettings;
+        // Ensure mcpServers exists
+        if (!settings.mcpServers) {
+          settings.mcpServers = {};
+        }
+        if (settings.autoLoadProjectFiles === undefined) {
+          settings.autoLoadProjectFiles = true;
+        }
+        return settings;
+      } catch {
+        const defaults = createDefaultSettings();
+        // Skip calling save() inside enqueue to avoid nested deadlocks,
+        // instead just write the file directly since we're already in a queued operation.
+        await fs.mkdir(this.baseDir, { recursive: true });
+        await fs.writeFile(this.settingsFile, JSON.stringify(defaults, null, 2), "utf-8");
+        return defaults;
       }
-      if (settings.autoLoadProjectFiles === undefined) {
-        settings.autoLoadProjectFiles = true;
-      }
-      return settings;
-    } catch {
-      const defaults = createDefaultSettings();
-      await this.save(defaults);
-      return defaults;
-    }
+    });
   }
 
   async save(settings: AppSettings): Promise<void> {
-    await fs.mkdir(this.baseDir, { recursive: true });
-    await fs.writeFile(this.settingsFile, JSON.stringify(settings, null, 2), "utf-8");
+    return this.enqueue(async () => {
+      await fs.mkdir(this.baseDir, { recursive: true });
+      await fs.writeFile(this.settingsFile, JSON.stringify(settings, null, 2), "utf-8");
+    });
   }
 
   async update(partial: Partial<AppSettings>): Promise<AppSettings> {
-    const current = await this.load();
-    const merged: AppSettings = {
-      ...current,
-      ...partial,
-      providers: partial.providers
-        ? { ...current.providers, ...partial.providers }
-        : current.providers,
-      mcpServers: partial.mcpServers !== undefined
-        ? partial.mcpServers
-        : current.mcpServers,
-    };
-    await this.save(merged);
-    return merged;
+    // We handle update as a single atomic operation in the queue
+    return this.enqueue(async () => {
+      let current: AppSettings;
+      try {
+        const data = await fs.readFile(this.settingsFile, "utf-8");
+        current = JSON.parse(data) as AppSettings;
+      } catch {
+        current = createDefaultSettings();
+      }
+
+      const merged: AppSettings = {
+        ...current,
+        ...partial,
+        providers: partial.providers
+          ? { ...current.providers, ...partial.providers }
+          : current.providers,
+        mcpServers: partial.mcpServers !== undefined
+          ? partial.mcpServers
+          : current.mcpServers,
+      };
+
+      await fs.mkdir(this.baseDir, { recursive: true });
+      await fs.writeFile(this.settingsFile, JSON.stringify(merged, null, 2), "utf-8");
+      return merged;
+    });
   }
 }
