@@ -200,17 +200,23 @@ export function useChat() {
 
   const deleteChat = useCallback(
     (chatId: string) => {
-      // Optimistically update the UI list
-      setChats((prev) => prev.filter((c) => c.id !== chatId));
+      const remaining = chats.filter((c) => c.id !== chatId);
+      setChats(remaining);
       
       postMessage({ command: "deleteChat", chatId });
       
       if (currentChatIdRef.current === chatId) {
         setCurrentChat(null);
-        postMessage({ command: "createChat" });
+        if (remaining.length > 0) {
+          // 他にチャットがある場合は、最初のチャットを読み込む
+          postMessage({ command: "loadChat", chatId: remaining[0].id });
+        } else {
+          // チャットが1つもなくなった場合のみ新規作成
+          postMessage({ command: "createChat" });
+        }
       }
     },
-    [postMessage]
+    [postMessage, chats]
   );
 
   const clearContext = useCallback(() => {
