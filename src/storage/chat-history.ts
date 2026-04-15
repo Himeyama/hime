@@ -66,6 +66,7 @@ export class ChatHistoryStorage {
 
   async saveChat(chat: Chat): Promise<void> {
     return this.enqueue(async () => {
+      this.log(`Saving chat to disk: ${chat.id} (Title: ${chat.title})`);
       const filePath = path.join(CHATS_DIR, `${chat.id}.json`);
       await fs.mkdir(CHATS_DIR, { recursive: true });
       await fs.writeFile(filePath, JSON.stringify(chat, null, 2), "utf-8");
@@ -76,7 +77,7 @@ export class ChatHistoryStorage {
         index = JSON.parse(data);
       } catch (err: any) {
         if (err.code !== "ENOENT") {
-          console.error("Failed to read chat index for saving:", err);
+          this.log(`Error reading index for saving: ${err.message}`);
           throw err;
         }
       }
@@ -91,58 +92,74 @@ export class ChatHistoryStorage {
         messageCount: chat.messages.length,
       };
 
-      const existingIndex = chats.findIndex((c) => c.id === chat.id);
+      // Ensure comparison is robust
+      const targetId = chat.id.trim().toLowerCase();
+      const existingIndex = chats.findIndex((c) => {
+        if (!c.id) return false;
+        return c.id.trim().toLowerCase() === targetId;
+      });
+
       if (existingIndex >= 0) {
+        this.log(`Updating existing chat in index at position ${existingIndex}`);
         chats[existingIndex] = meta;
       } else {
+        this.log(`Adding new chat to index: ${chat.id}`);
         chats.unshift(meta);
       }
 
       index.chats = chats;
       await fs.writeFile(INDEX_FILE, JSON.stringify(index, null, 2), "utf-8");
+      this.log(`Index updated successfully (Total chats: ${chats.length})`);
     });
   }
 
   async deleteChat(id: string): Promise<void> {
     return this.enqueue(async () => {
-      this.log(`Start deleting chat: ${id}`);
+      this.log(`Requested deletion for ID: ${id}`);
       const filePath = path.join(CHATS_DIR, `${id}.json`);
       try {
         await fs.unlink(filePath);
-        this.log(`Deleted file: ${filePath}`);
+        this.log(`Deleted individual chat file: ${filePath}`);
       } catch (err: any) {
         if (err.code !== "ENOENT") {
-          this.log(`Error deleting file ${filePath}: ${err.message}`);
+          this.log(`Error unlinking file ${filePath}: ${err.message}`);
           throw err;
         }
-        this.log(`File not found, skipping unlink: ${filePath}`);
+        this.log(`Note: Individual file not found for ${id}`);
       }
 
       let index: ChatsIndex = { chats: [] };
       try {
         const data = await fs.readFile(INDEX_FILE, "utf-8");
         index = JSON.parse(data);
-        this.log(`Loaded index, contains ${index.chats?.length || 0} chats`);
       } catch (err: any) {
         if (err.code !== "ENOENT") {
-          this.log(`Error reading index ${INDEX_FILE}: ${err.message}`);
+          this.log(`Error reading index for deletion: ${err.message}`);
           throw err;
         }
-        this.log(`Index file not found, nothing to delete from index`);
       }
 
-      const initialCount = index.chats?.length || 0;
-      // Use case-insensitive comparison for safety, though UUIDs should be consistent
-      index.chats = (index.chats || []).filter((c) => c.id.trim().toLowerCase() !== id.trim().toLowerCase());
-      const afterCount = index.chats.length;
+      const targetId = id.trim().toLowerCase();
+      const initialCount = (index.chats || []).length;
       
-      this.log(`Filtering complete: ${initialCount} -> ${afterCount}`);
+      // Safety check for ID existence in each entry
+      index.chats = (index.chats || []).filter((c) => {
+        if (!c.id) {
+          this.log(`Warning: Found chat entry without ID in index, removing it.`);
+          return false;
+        }
+        const match = c.id.trim().toLowerCase() === targetId;
+        return !match;
+      });
+
+      const afterCount = index.chats.length;
+      this.log(`Filtering index: ${initialCount} -> ${afterCount} (Target: ${id})`);
       
       if (initialCount !== afterCount) {
         await fs.writeFile(INDEX_FILE, JSON.stringify(index, null, 2), "utf-8");
-        this.log(`Index updated and written to disk`);
+        this.log(`Index updated: Removed ${initialCount - afterCount} entries matching ${id}`);
       } else {
-        this.log(`No chat matching ID ${id} found in index, skipped writing`);
+        this.log(`ID ${id} NOT found in index. Current IDs: ${ (index.chats || []).map(c => c.id).join(', ') }`);
       }
     });
   }
