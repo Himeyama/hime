@@ -28,7 +28,7 @@ export async function activate(context: vscode.ExtensionContext) {
   context.subscriptions.push(outputChannel);
 
   // Initialize storage
-  chatStorage = new ChatHistoryStorage();
+  chatStorage = new ChatHistoryStorage(outputChannel);
   settingsStorage = new SettingsStorage();
   await chatStorage.initialize();
   await settingsStorage.initialize();
@@ -144,8 +144,14 @@ class HimeChatViewProvider implements vscode.WebviewViewProvider {
           break;
         }
         case "deleteChat": {
+          outputChannel.appendLine(`[Storage] Deleting chat: ${message.chatId}`);
+          if (!message.chatId) {
+            outputChannel.appendLine(`[Storage] Error: No chatId provided for deletion`);
+            break;
+          }
           await chatStorage.deleteChat(message.chatId);
           const chats = await chatStorage.listChats();
+          outputChannel.appendLine(`[Storage] Chat list updated, count: ${chats.length}`);
           this.sendToWebview({ type: "chatListUpdate", chats });
           break;
         }

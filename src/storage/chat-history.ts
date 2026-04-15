@@ -4,18 +4,31 @@ import * as os from "os";
 import * as crypto from "crypto";
 import { Chat, ChatMeta, ChatsIndex, ProviderType } from "../types/chat";
 
+import * as vscode from "vscode";
+
 const BASE_DIR = path.join(os.homedir(), ".hime");
 const CHATS_DIR = path.join(BASE_DIR, "chats");
 const INDEX_FILE = path.join(BASE_DIR, "chats-index.json");
 
 export class ChatHistoryStorage {
   private queue: Promise<any> = Promise.resolve();
+  private output: vscode.OutputChannel | undefined;
+
+  constructor(output?: vscode.OutputChannel) {
+    this.output = output;
+  }
+
+  private log(msg: string) {
+    this.output?.appendLine(`[ChatHistoryStorage] ${msg}`);
+  }
 
   private async enqueue<T>(operation: () => Promise<T>): Promise<T> {
     const result = this.queue.then(operation);
     this.queue = result.then(
       () => {},
-      () => {}
+      (err) => {
+        this.log(`Queue error: ${err.message || String(err)}`);
+      }
     );
     return result;
   }
@@ -92,26 +105,45 @@ export class ChatHistoryStorage {
 
   async deleteChat(id: string): Promise<void> {
     return this.enqueue(async () => {
+      this.log(`Start deleting chat: ${id}`);
       const filePath = path.join(CHATS_DIR, `${id}.json`);
       try {
         await fs.unlink(filePath);
+        this.log(`Deleted file: ${filePath}`);
       } catch (err: any) {
-        if (err.code !== "ENOENT") throw err;
+        if (err.code !== "ENOENT") {
+          this.log(`Error deleting file ${filePath}: ${err.message}`);
+          throw err;
+        }
+        this.log(`File not found, skipping unlink: ${filePath}`);
       }
 
       let index: ChatsIndex = { chats: [] };
       try {
         const data = await fs.readFile(INDEX_FILE, "utf-8");
         index = JSON.parse(data);
+        this.log(`Loaded index, contains ${index.chats?.length || 0} chats`);
       } catch (err: any) {
         if (err.code !== "ENOENT") {
-          console.error("Failed to read chat index for deletion:", err);
+          this.log(`Error reading index ${INDEX_FILE}: ${err.message}`);
           throw err;
         }
+        this.log(`Index file not found, nothing to delete from index`);
       }
 
-      index.chats = (index.chats || []).filter((c) => c.id !== id);
-      await fs.writeFile(INDEX_FILE, JSON.stringify(index, null, 2), "utf-8");
+      const initialCount = index.chats?.length || 0;
+      // Use case-insensitive comparison for safety, though UUIDs should be consistent
+      index.chats = (index.chats || []).filter((c) => c.id.trim().toLowerCase() !== id.trim().toLowerCase());
+      const afterCount = index.chats.length;
+      
+      this.log(`Filtering complete: ${initialCount} -> ${afterCount}`);
+      
+      if (initialCount !== afterCount) {
+        await fs.writeFile(INDEX_FILE, JSON.stringify(index, null, 2), "utf-8");
+        this.log(`Index updated and written to disk`);
+      } else {
+        this.log(`No chat matching ID ${id} found in index, skipped writing`);
+      }
     });
   }
 
