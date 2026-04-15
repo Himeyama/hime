@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from "react";
 import React from "react";
 import { Check, Copy, Play, Code as CodeIcon } from "lucide-react";
+import * as Lucide from "lucide-react";
 import hljs from "highlight.js";
 import mermaid from "mermaid";
 import { LiveProvider, LivePreview, LiveError } from "react-live";
@@ -10,6 +11,8 @@ import { Label } from "./ui/label";
 import { Switch } from "./ui/switch";
 import { Badge } from "./ui/badge";
 import { Separator } from "./ui/separator";
+import { Select, SelectContent, SelectGroup, SelectItem, SelectLabel, SelectSeparator, SelectTrigger, SelectValue } from "./ui/select";
+import { Textarea } from "./ui/textarea";
 
 // Scope for JSX preview
 const PREVIEW_SCOPE = {
@@ -17,12 +20,22 @@ const PREVIEW_SCOPE = {
   useState,
   useEffect,
   useRef,
+  ...Lucide,
   Button,
   Input,
   Label,
   Switch,
   Badge,
   Separator,
+  Select,
+  SelectContent,
+  SelectGroup,
+  SelectItem,
+  SelectLabel,
+  SelectSeparator,
+  SelectTrigger,
+  SelectValue,
+  Textarea,
 };
 
 interface CodeBlockProps {
@@ -193,12 +206,35 @@ export function CodeBlock({ language, code }: CodeBlockProps) {
         </div>
       ) : isJSX && showPreview ? (
         <div className="p-4 bg-background min-h-[100px] overflow-auto">
-          <LiveProvider code={code} scope={PREVIEW_SCOPE} noInline={!code.includes("render(")}>
-            <div className="rounded-md border border-border/50 p-4 bg-vsc-editor-bg shadow-inner mb-2">
-              <LivePreview />
-            </div>
-            <LiveError className="text-[10px] font-mono text-destructive bg-destructive/5 p-2 rounded mt-2 whitespace-pre-wrap border border-destructive/20" />
-          </LiveProvider>
+          {(() => {
+            // Clean code for preview: strip imports, exports, and basic TS types
+            let previewCode = code
+              .replace(/^import\s+.*?\r?\n/gm, "")
+              .replace(/^export\s+(default\s+)?/gm, "")
+              .replace(/:\s*(?:React\.FC|JSX\.Element|string|number|boolean|any|void)\b/g, "")
+              .trim();
+            
+            const hasRender = previewCode.includes("render(");
+            const hasDeclaration = /^(const|let|var|function|class)\s+/m.test(previewCode);
+            const noInline = hasRender || hasDeclaration;
+
+            // Automatically append render() if missing but a component is defined
+            if (noInline && !hasRender) {
+              const componentMatch = previewCode.match(/^(?:const|function)\s+([A-Z][A-Za-z0-9_]*)/m);
+              if (componentMatch) {
+                previewCode += `\n\nrender(<${componentMatch[1]} />);`;
+              }
+            }
+
+            return (
+              <LiveProvider code={previewCode} scope={PREVIEW_SCOPE} noInline={noInline}>
+                <div className="rounded-md border border-border/50 p-4 bg-vsc-editor-bg shadow-inner mb-2">
+                  <LivePreview />
+                </div>
+                <LiveError className="text-[10px] font-mono text-destructive bg-destructive/5 p-2 rounded mt-2 whitespace-pre-wrap border border-destructive/20" />
+              </LiveProvider>
+            );
+          })()}
         </div>
       ) : (
         <pre className="px-3 py-3 overflow-x-auto font-vsc-editor text-[13px] leading-snug m-0 scrollbar-thin bg-transparent">

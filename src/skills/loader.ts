@@ -152,6 +152,51 @@ $ARGUMENTS
 
 選択範囲がない場合は、アクティブファイル全体のテストを生成してください。`,
   },
+  {
+    name: "app",
+    description: "React (TSX) で高品質なアプリを生成 (Anthropic/frontend-design を本プロジェクト用に改変)",
+    source: "builtin",
+    prompt: `以下の要件に基づき、高品質なデザインのアプリケーションまたはコンポーネントを TSX で作成してください。
+
+要件: $ARGUMENTS
+
+## 技術制約 (厳守)
+- **出力形式**: 必ず **1つの tsx コードブロック** のみで出力してください。
+- **スタイリング**: すべてのスタイルを TSX 内に完結させてください。プロジェクトで利用可能な **Tailwind CSS** を優先的に使用してください。
+- **構成**: 単一のファイルとして動作する React コンポーネントとして実装してください。
+
+## 利用可能なライブラリ・コンポーネント
+以下のものは、プレビュー環境で既にインポートされており、**インポート文なしで直接使用できます**。
+
+- **React Hooks**: \`useState\`, \`useEffect\`, \`useRef\`
+- **UI コンポーネント (shadcn/ui ベース)**:
+  - \`Button\`, \`Input\`, \`Label\`, \`Switch\`, \`Badge\`, \`Separator\`, \`Textarea\`
+  - \`Select\`, \`SelectTrigger\`, \`SelectValue\`, \`SelectContent\`, \`SelectGroup\`, \`SelectItem\`, \`SelectLabel\`, \`SelectSeparator\`
+- **アイコン (\`lucide-react\` )**:
+  - すべての Lucide アイコンが利用可能です (例: \`<Search />\`, \`<User />\`, \`<ChevronRight />\` 等)。
+  - \`import\` 文は書かないでください。
+
+## デザイン指針 (frontend-design)
+このスキルは、AI特有の「ありきたりな」デザインを避け、独創的でプロダクション品質のインターフェースを構築するためのものです。
+
+### 1. デザイン思考
+コーディングの前に、大胆な美的方向性を決定してください：
+- **トーンの選択**: 徹底したミニマリズム、マキシマリズム、レトロフューチャー、ラグジュアリー、ブルータリズムなど、明確なコンセプトを選択してください。
+- **差別化**: 記憶に残る、忘れられない要素を少なくとも1つ取り入れてください。
+
+### 2. 美学的ガイドライン
+- **タイポグラフィ**: 美しく個性的なフォント構成を意識してください。
+- **モーション**: CSSアニメーションやマイクロインタラクションを活用し、驚きを与えてください。
+- **空間構成**: 非対称レイアウト、要素のオーバーラップ、大胆な余白など、予想外の配置を試みてください。
+- **視覚的詳細**: グラデーションメッシュ、ノイズテクスチャ、幾何学パターン、透過レイヤーなどを用いて深みを出してください。
+
+汎用的なフォント (Inter, Arial等) や、ありきたりな配色 (白背景に紫のグラデーション等) は避け、文脈に応じた真のデザインを追求してください。
+
+---
+Source: https://github.com/anthropics/skills/blob/main/skills/frontend-design/SKILL.md
+License: Refer to LICENSE at the original repository.
+Note: This is a modified version adapted for Hime. Available components and Lucide icons are pre-injected into the scope for seamless preview.`,
+  },
 ];
 
 interface SkillFrontmatter {

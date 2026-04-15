@@ -50,6 +50,10 @@ const webviewConfig = {
   plugins: [postcssPlugin],
   define: {
     "process.env.NODE_ENV": isProduction ? '"production"' : '"development"',
+    global: "window",
+  },
+  banner: {
+    js: "var exports = {};",
   },
 };
 
