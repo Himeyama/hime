@@ -91,7 +91,7 @@ export class AnthropicProvider extends BaseProvider {
 
       const stream = client.messages.stream({
         model: this.config.model,
-        max_tokens: this.config.maxTokens || 8192,
+        max_tokens: 8192,
         system:
           typeof systemPrompt === "string"
             ? [{ type: "text" as const, text: systemPrompt, cache_control: { type: "ephemeral" } }]

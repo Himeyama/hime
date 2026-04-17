@@ -141,7 +141,6 @@ export class GoogleProvider extends BaseProvider {
         contents: currentContents,
         config: {
           systemInstruction: resolvedSystemPrompt,
-          maxOutputTokens: this.config.maxTokens || 8192,
           ...(genaiTools ? { tools: genaiTools } : {}),
         },
       });
@@ -247,7 +246,6 @@ export class GoogleProvider extends BaseProvider {
     await client.models.generateContent({
       model: this.config.model,
       contents: [{ role: "user", parts: [{ text: "hi" }] }],
-      config: { maxOutputTokens: 1 },
     });
     return true;
   }

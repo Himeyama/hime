@@ -8,7 +8,6 @@ export interface ProviderConfig {
   endpoint?: string;
   deploymentName?: string;
   model: string;
-  maxTokens?: number;
 }
 
 export interface AIProvider {

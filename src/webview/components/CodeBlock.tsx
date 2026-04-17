@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useMemo, useRef } from "react";
 import React from "react";
 import { Check, Copy, Play, Code as CodeIcon } from "lucide-react";
 import * as Lucide from "lucide-react";
@@ -13,14 +13,20 @@ import { Badge } from "./ui/badge";
 import { Separator } from "./ui/separator";
 import { Select, SelectContent, SelectGroup, SelectItem, SelectLabel, SelectSeparator, SelectTrigger, SelectValue } from "./ui/select";
 import { Textarea } from "./ui/textarea";
+import { Card, CardHeader, CardFooter, CardTitle, CardDescription, CardContent } from "./ui/card";
+import { Tooltip, TooltipTrigger, TooltipContent, TooltipProvider } from "./ui/tooltip";
+import { Table, TableHeader, TableBody, TableFooter, TableHead, TableRow, TableCell, TableCaption } from "./ui/table";
+import { cn } from "../lib/utils";
 
 // Scope for JSX preview
 const PREVIEW_SCOPE = {
   React,
   useState,
   useEffect,
+  useMemo,
   useRef,
   ...Lucide,
+  cn,
   Button,
   Input,
   Label,
@@ -36,6 +42,24 @@ const PREVIEW_SCOPE = {
   SelectTrigger,
   SelectValue,
   Textarea,
+  Card,
+  CardHeader,
+  CardFooter,
+  CardTitle,
+  CardDescription,
+  CardContent,
+  Tooltip,
+  TooltipTrigger,
+  TooltipContent,
+  TooltipProvider,
+  Table,
+  TableHeader,
+  TableBody,
+  TableFooter,
+  TableHead,
+  TableRow,
+  TableCell,
+  TableCaption,
 };
 
 interface CodeBlockProps {
@@ -209,7 +233,8 @@ export function CodeBlock({ language, code }: CodeBlockProps) {
           {(() => {
             // Clean code for preview: strip imports, exports, and basic TS types
             let previewCode = code
-              .replace(/^import\s+.*?\r?\n/gm, "")
+              .replace(/^import\s+[\s\S]*?from\s+['"].*?['"]\r?\n?/gm, "")
+              .replace(/^import\s+(['"].*?['"]|.*?\r?\n)/gm, "")
               .replace(/^export\s+(default\s+)?/gm, "")
               .replace(/:\s*(?:React\.FC|JSX\.Element|string|number|boolean|any|void)\b/g, "")
               .trim();
@@ -229,7 +254,9 @@ export function CodeBlock({ language, code }: CodeBlockProps) {
             return (
               <LiveProvider code={previewCode} scope={PREVIEW_SCOPE} noInline={noInline}>
                 <div className="rounded-md border border-border/50 p-4 bg-vsc-editor-bg shadow-inner mb-2">
-                  <LivePreview />
+                  <TooltipProvider>
+                    <LivePreview />
+                  </TooltipProvider>
                 </div>
                 <LiveError className="text-[10px] font-mono text-destructive bg-destructive/5 p-2 rounded mt-2 whitespace-pre-wrap border border-destructive/20" />
               </LiveProvider>

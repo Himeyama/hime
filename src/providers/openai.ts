@@ -89,7 +89,6 @@ export class OpenAIProvider extends BaseProvider {
       const stream = await client.chat.completions.create(
         {
           model: this.config.model,
-          max_tokens: this.config.maxTokens || 8192,
           messages: currentMessages,
           stream: true,
           stream_options: { include_usage: true },
@@ -231,7 +230,6 @@ export class OpenAIProvider extends BaseProvider {
       const client = this.createClient();
       await client.chat.completions.create({
         model: this.config.model,
-        max_tokens: 1,
         messages: [{ role: "user", content: "hi" }],
       });
       return true;

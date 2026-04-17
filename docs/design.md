@@ -329,7 +329,6 @@ interface ProviderConfig {
   endpoint?: string;             // カスタムエンドポイントURL（空欄でデフォルト）
   deploymentName?: string;       // Azure OpenAI のデプロイメント名
   model: string;                 // モデル名
-  maxTokens?: number;
 }
 
 // 各プロバイダーのデフォルトエンドポイント
