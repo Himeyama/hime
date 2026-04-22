@@ -25,7 +25,7 @@ export class AzureOpenAIProvider extends VercelBaseProvider {
     await generateText({
       model: this.createModel(),
       prompt: "hi",
-      maxOutputTokens: 1,
+      maxOutputTokens: 16,
     });
     return true;
   }

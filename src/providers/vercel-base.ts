@@ -50,7 +50,8 @@ export abstract class VercelBaseProvider extends BaseProvider {
   protected buildVercelTools(
     tools: any[] | undefined,
     onToolCall: ((tc: ToolCall) => Promise<string>) | undefined,
-    toolCallsById: Map<string, ToolCall>
+    onToolCallStart: ((tc: ToolCall) => void) | undefined,
+    allToolCalls: ToolCall[]
   ): Record<string, any> | undefined {
     if (!tools || tools.length === 0 || !onToolCall) return undefined;
 
@@ -67,9 +68,17 @@ export abstract class VercelBaseProvider extends BaseProvider {
       result[name] = tool({
         description,
         inputSchema: jsonSchema(schema as any),
+        // execute is called by Vercel AI SDK before the tool-call chunk reaches our fullStream
+        // consumer, so we build tc here directly instead of looking it up from a shared map.
         execute: async (input: unknown, options: any) => {
-          const tc = toolCallsById.get(options?.toolCallId as string);
-          if (!tc) return "Tool call not found";
+          const tc: ToolCall = {
+            id: (options?.toolCallId as string) ?? "",
+            name: toolName,
+            arguments: (input as Record<string, unknown>) ?? {},
+            status: "running",
+          };
+          allToolCalls.push(tc);
+          onToolCallStart?.(tc);
           try {
             const res = await onToolCall(tc);
             tc.status = "completed";
@@ -100,8 +109,7 @@ export abstract class VercelBaseProvider extends BaseProvider {
     const resolvedSystem = this.resolveSystemPrompt(systemPrompt);
     const modelMessages = this.himeToModelMessages(messages);
     const allToolCalls: ToolCall[] = [];
-    const toolCallsById = new Map<string, ToolCall>();
-    const vercelTools = this.buildVercelTools(tools, onToolCall, toolCallsById);
+    const vercelTools = this.buildVercelTools(tools, onToolCall, onToolCallStart, allToolCalls);
     let fullContent = "";
 
     const result = streamText({
@@ -119,16 +127,6 @@ export abstract class VercelBaseProvider extends BaseProvider {
       if (chunk.type === "text-delta") {
         fullContent += chunk.text;
         onToken(chunk.text);
-      } else if (chunk.type === "tool-call") {
-        const tc: ToolCall = {
-          id: chunk.toolCallId,
-          name: chunk.toolName,
-          arguments: ((chunk as any).input as Record<string, unknown>) ?? {},
-          status: "running",
-        };
-        allToolCalls.push(tc);
-        toolCallsById.set(tc.id, tc);
-        onToolCallStart?.(tc);
       }
     }
 

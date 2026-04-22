@@ -59,6 +59,7 @@ export function useSettings() {
 
   const updateSettings = useCallback(
     (partial: Partial<AppSettings>) => {
+      setSettings((prev) => (prev ? { ...prev, ...partial } : prev));
       postMessage({ command: "updateSettings", settings: partial });
     },
     [postMessage]
