@@ -19,7 +19,8 @@ export function MessageList({
   streamingMessageId,
   streamingToolCalls,
 }: MessageListProps) {
-  const bottomRef = useRef<HTMLDivElement>(null);
+  const lastUserMsgRef = useRef<HTMLDivElement>(null);
+  const prevLengthRef = useRef(0);
 
   // Only show messages after the last context clear mark
   const visibleMessages = useMemo(() => {
@@ -31,20 +32,32 @@ export function MessageList({
     return messages.slice(lastClearIdx + 1);
   }, [messages]);
 
+  // ユーザーメッセージが追加されたときのみ、そのメッセージを上部へスクロール
   useEffect(() => {
-    bottomRef.current?.scrollIntoView({ behavior: "smooth" });
-  }, [visibleMessages, streamingContent]);
+    const lastMsg = visibleMessages[visibleMessages.length - 1];
+    if (visibleMessages.length > prevLengthRef.current && lastMsg?.role === "user") {
+      lastUserMsgRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+    }
+    prevLengthRef.current = visibleMessages.length;
+  }, [visibleMessages]);
+
+  // 最後のユーザーメッセージのインデックスを特定
+  const lastUserMsgIndex = visibleMessages.reduce(
+    (idx, msg, i) => (msg.role === "user" ? i : idx),
+    -1
+  );
 
   return (
     <div className={`flex-1 overflow-y-auto scrollbar-thin scroll-smooth ${className || ""}`}>
-      {visibleMessages.map((msg) => (
-        <MessageBubble
-          key={msg.id}
-          message={msg}
-          isStreaming={isStreaming && msg.id === streamingMessageId}
-          streamingContent={msg.id === streamingMessageId ? streamingContent : undefined}
-          streamingToolCalls={msg.id === streamingMessageId ? streamingToolCalls : undefined}
-        />
+      {visibleMessages.map((msg, index) => (
+        <div key={msg.id} ref={index === lastUserMsgIndex ? lastUserMsgRef : undefined}>
+          <MessageBubble
+            message={msg}
+            isStreaming={isStreaming && msg.id === streamingMessageId}
+            streamingContent={msg.id === streamingMessageId ? streamingContent : undefined}
+            streamingToolCalls={msg.id === streamingMessageId ? streamingToolCalls : undefined}
+          />
+        </div>
       ))}
       {isStreaming && streamingMessageId && !visibleMessages.some((m) => m.id === streamingMessageId) && (
         <MessageBubble
@@ -59,7 +72,7 @@ export function MessageList({
           streamingToolCalls={streamingToolCalls}
         />
       )}
-      <div ref={bottomRef} className="h-4" />
+      <div className="h-4" />
     </div>
   );
 }
