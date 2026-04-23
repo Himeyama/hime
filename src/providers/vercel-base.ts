@@ -1,4 +1,4 @@
-import { streamText, generateText, tool, jsonSchema, stepCountIs } from "ai";
+import { streamText, tool, jsonSchema, stepCountIs } from "ai";
 import type { LanguageModel, ModelMessage } from "ai";
 import { BaseProvider } from "./base";
 import type { SystemPrompt } from "../types/provider";
@@ -6,6 +6,10 @@ import type { Message, ToolCall } from "../types/chat";
 
 export abstract class VercelBaseProvider extends BaseProvider {
   protected abstract createModel(): LanguageModel;
+
+  // Set true in providers where the SDK's internal multi-step generates incompatible
+  // message types (e.g. item_reference for Ollama's OpenAI-compatible endpoint).
+  protected readonly useManualToolLoop: boolean = false;
 
   protected himeToModelMessages(messages: Message[]): ModelMessage[] {
     const result: ModelMessage[] = [];
@@ -68,8 +72,6 @@ export abstract class VercelBaseProvider extends BaseProvider {
       result[name] = tool({
         description,
         inputSchema: jsonSchema(schema as any),
-        // execute is called by Vercel AI SDK before the tool-call chunk reaches our fullStream
-        // consumer, so we build tc here directly instead of looking it up from a shared map.
         execute: async (input: unknown, options: any) => {
           const tc: ToolCall = {
             id: (options?.toolCallId as string) ?? "",
@@ -96,7 +98,42 @@ export abstract class VercelBaseProvider extends BaseProvider {
     return result;
   }
 
-  async chat(
+  // Tool definitions without execute callbacks — used by the manual tool loop to prevent
+  // the SDK from running its own multi-step continuation (which can emit item_reference
+  // message types that some OpenAI-compatible endpoints don't accept).
+  protected buildVercelToolDefsOnly(tools: any[] | undefined): Record<string, any> | undefined {
+    if (!tools || tools.length === 0) return undefined;
+
+    const result: Record<string, any> = {};
+    for (const t of tools) {
+      const name: string = t.function?.name ?? t.name;
+      const description: string = t.function?.description ?? t.description ?? "";
+      const schema: Record<string, unknown> = t.function?.parameters ?? t.input_schema ?? {};
+      result[name] = tool({ description, inputSchema: jsonSchema(schema as any) });
+    }
+    return result;
+  }
+
+  private async consumeStream(
+    stream: ReturnType<typeof streamText>,
+    signal: AbortSignal | undefined,
+    onToken: (token: string) => void,
+    outContent: { value: string }
+  ): Promise<void> {
+    for await (const chunk of stream.fullStream) {
+      if (signal?.aborted) break;
+      if (chunk.type === "text-delta") {
+        outContent.value += chunk.text;
+        onToken(chunk.text);
+      } else if (chunk.type === "error") {
+        throw chunk.error;
+      }
+    }
+  }
+
+  // Manual tool loop: runs one streamText call per step, collects tool-call chunks,
+  // executes tools, and feeds results back without relying on SDK internal multi-step.
+  protected async chatManualToolLoop(
     messages: Message[],
     systemPrompt: SystemPrompt,
     onToken: (token: string) => void,
@@ -107,10 +144,107 @@ export abstract class VercelBaseProvider extends BaseProvider {
   ): Promise<Message> {
     const model = this.createModel();
     const resolvedSystem = this.resolveSystemPrompt(systemPrompt);
+    let currentMessages: any[] = this.himeToModelMessages(messages);
+    const allToolCalls: ToolCall[] = [];
+    let fullContent = "";
+
+    const vercelToolDefs = this.buildVercelToolDefsOnly(tools);
+
+    for (let step = 0; step < 10; step++) {
+      if (signal?.aborted) break;
+
+      type StepToolCall = { toolCallId: string; toolName: string; input: Record<string, unknown> };
+      const stepToolCalls: StepToolCall[] = [];
+      let stepContent = "";
+
+      const result = streamText({
+        model,
+        system: resolvedSystem,
+        messages: currentMessages,
+        ...(vercelToolDefs && onToolCall ? { tools: vercelToolDefs } : {}),
+        maxOutputTokens: 8192,
+        abortSignal: signal,
+      });
+
+      for await (const chunk of result.fullStream) {
+        if (signal?.aborted) break;
+        if (chunk.type === "text-delta") {
+          stepContent += chunk.text;
+          fullContent += chunk.text;
+          onToken(chunk.text);
+        } else if (chunk.type === "tool-call") {
+          const c = chunk as any;
+          const rawInput = c.input;
+          const parsedInput: Record<string, unknown> =
+            typeof rawInput === "string" ? JSON.parse(rawInput) : (rawInput ?? {});
+          stepToolCalls.push({ toolCallId: c.toolCallId ?? "", toolName: c.toolName ?? "", input: parsedInput });
+        } else if (chunk.type === "error") {
+          throw (chunk as any).error;
+        }
+      }
+
+      if (stepToolCalls.length === 0 || !onToolCall) break;
+
+      const toolResultParts: any[] = [];
+      for (const tc of stepToolCalls) {
+        const toolCall: ToolCall = { id: tc.toolCallId, name: tc.toolName, arguments: tc.input, status: "running" };
+        allToolCalls.push(toolCall);
+        onToolCallStart?.(toolCall);
+
+        try {
+          const res = await onToolCall(toolCall);
+          toolCall.status = "completed";
+          toolCall.result = res;
+          toolResultParts.push({ type: "tool-result", toolCallId: toolCall.id, toolName: toolCall.name, output: res });
+        } catch (err: any) {
+          toolCall.status = "error";
+          toolCall.error = err.message || String(err);
+          toolResultParts.push({
+            type: "tool-result", toolCallId: toolCall.id, toolName: toolCall.name,
+            output: `Error: ${toolCall.error}`, isError: true,
+          });
+        }
+      }
+
+      const assistantParts: any[] = [];
+      if (stepContent) assistantParts.push({ type: "text", text: stepContent });
+      for (const tc of stepToolCalls) {
+        assistantParts.push({ type: "tool-call", toolCallId: tc.toolCallId, toolName: tc.toolName, input: tc.input });
+      }
+
+      currentMessages = [
+        ...currentMessages,
+        { role: "assistant", content: assistantParts },
+        { role: "tool", content: toolResultParts },
+      ];
+    }
+
+    return this.createAssistantMessage(
+      fullContent,
+      allToolCalls.length > 0 ? allToolCalls : undefined,
+      { inputTokens: 0, outputTokens: 0, cacheReadTokens: 0, cacheWriteTokens: 0 }
+    );
+  }
+
+  async chat(
+    messages: Message[],
+    systemPrompt: SystemPrompt,
+    onToken: (token: string) => void,
+    onToolCall?: (toolCall: ToolCall) => Promise<string>,
+    onToolCallStart?: (toolCall: ToolCall) => void,
+    signal?: AbortSignal,
+    tools?: any[]
+  ): Promise<Message> {
+    if (this.useManualToolLoop) {
+      return this.chatManualToolLoop(messages, systemPrompt, onToken, onToolCall, onToolCallStart, signal, tools);
+    }
+
+    const model = this.createModel();
+    const resolvedSystem = this.resolveSystemPrompt(systemPrompt);
     const modelMessages = this.himeToModelMessages(messages);
     const allToolCalls: ToolCall[] = [];
     const vercelTools = this.buildVercelTools(tools, onToolCall, onToolCallStart, allToolCalls);
-    let fullContent = "";
+    const content = { value: "" };
 
     const result = streamText({
       model,
@@ -122,13 +256,7 @@ export abstract class VercelBaseProvider extends BaseProvider {
       abortSignal: signal,
     });
 
-    for await (const chunk of result.fullStream) {
-      if (signal?.aborted) break;
-      if (chunk.type === "text-delta") {
-        fullContent += chunk.text;
-        onToken(chunk.text);
-      }
-    }
+    await this.consumeStream(result, signal, onToken, content);
 
     let usage = { inputTokens: 0, outputTokens: 0, cacheReadTokens: 0, cacheWriteTokens: 0 };
     try {
@@ -142,7 +270,7 @@ export abstract class VercelBaseProvider extends BaseProvider {
     } catch {}
 
     return this.createAssistantMessage(
-      fullContent,
+      content.value,
       allToolCalls.length > 0 ? allToolCalls : undefined,
       usage
     );

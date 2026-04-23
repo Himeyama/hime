@@ -56,6 +56,7 @@ export class ToolExecutor {
       case "openrouter":
       case "ollama":
       case "google":
+      case "custom":
         return this.toOpenAITools();
       default:
         return undefined;
