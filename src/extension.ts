@@ -379,6 +379,7 @@ class HimeChatViewProvider implements vscode.WebviewViewProvider {
         async (toolCall) => {
           try {
             const result = await toolExecutor.executeToolCall(toolCall);
+            outputChannel.appendLine(`[Tool] ${toolCall.name} → ${result.length > 500 ? result.slice(0, 500) + "..." : result}`);
             const updatedTc = assistantMessage.toolCalls?.find((t) => t.id === toolCall.id);
             if (updatedTc) {
               updatedTc.status = "completed";
@@ -394,6 +395,7 @@ class HimeChatViewProvider implements vscode.WebviewViewProvider {
             return result;
           } catch (err: any) {
             const errorMsg = err.message || String(err);
+            outputChannel.appendLine(`[Tool] ${toolCall.name} ERROR: ${errorMsg}`);
             const updatedTc = assistantMessage.toolCalls?.find((t) => t.id === toolCall.id);
             if (updatedTc) {
               updatedTc.status = "error";
@@ -411,6 +413,7 @@ class HimeChatViewProvider implements vscode.WebviewViewProvider {
           }
         },
         (toolCall) => {
+          outputChannel.appendLine(`[Tool] ${toolCall.name}(${JSON.stringify(toolCall.arguments)})`);
           const tc: import("./types/chat").ToolCall = {
             id: toolCall.id,
             name: toolCall.name,
@@ -430,10 +433,9 @@ class HimeChatViewProvider implements vscode.WebviewViewProvider {
 
       if (finalAssistantMessage.usage) {
         const u = finalAssistantMessage.usage;
-        const parts = [`input=${u.inputTokens}`, `output=${u.outputTokens}`];
-        if (u.cacheReadTokens) parts.push(`cache_read=${u.cacheReadTokens}`);
-        if (u.cacheWriteTokens) parts.push(`cache_write=${u.cacheWriteTokens}`);
-        outputChannel.appendLine(`[tokens] ${parts.join("  ")}`);
+        const cacheTokens = (u.cacheReadTokens ?? 0) + (u.cacheWriteTokens ?? 0);
+        const nonCachedInput = u.inputTokens - cacheTokens;
+        outputChannel.appendLine(`[tokens] input: ${nonCachedInput} tok, cache: ${cacheTokens} tok, output: ${u.outputTokens} tok`);
       }
       
       if (!chat.messages.find((m: Message) => m.id === messageId)) {
