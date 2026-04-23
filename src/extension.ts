@@ -216,6 +216,16 @@ class HimeChatViewProvider implements vscode.WebviewViewProvider {
           await this.sendSettings();
           break;
         }
+        case "reorderModels": {
+          const settings = await settingsStorage.load();
+          const idOrder = message.modelIds;
+          const reordered = idOrder
+            .map((id) => settings.models.find((m) => m.id === id))
+            .filter((m): m is ModelEntry => !!m);
+          await settingsStorage.update({ models: reordered });
+          await this.sendSettings();
+          break;
+        }
         case "setDefaultModel": {
           await settingsStorage.update({ defaultModelId: message.modelId });
           await this.sendSettings();

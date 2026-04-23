@@ -87,6 +87,7 @@ export function App() {
           onUpdateSettings={settingsHook.updateSettings}
           onSaveModel={settingsHook.saveModel}
           onDeleteModel={settingsHook.deleteModel}
+          onReorderModels={settingsHook.reorderModels}
           onTestConnection={settingsHook.testConnection}
           onReconnectMcp={settingsHook.reconnectMcp}
           onOpenSettingsJson={() => postMessage({ command: "openSettingsJson" })}

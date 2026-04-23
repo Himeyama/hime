@@ -76,6 +76,13 @@ export function useSettings() {
     [postMessage]
   );
 
+  const reorderModels = useCallback(
+    (modelIds: string[]) => {
+      postMessage({ command: "reorderModels", modelIds });
+    },
+    [postMessage]
+  );
+
   const reconnectMcp = useCallback(() => {
     postMessage({ command: "reconnectMcp" });
   }, [postMessage]);
@@ -88,6 +95,7 @@ export function useSettings() {
     updateSettings,
     saveModel,
     deleteModel,
+    reorderModels,
     testConnection,
     reconnectMcp,
   };

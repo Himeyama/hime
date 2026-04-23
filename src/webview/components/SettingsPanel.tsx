@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { Code2, X, Eye, EyeOff, Check, AlertCircle, RefreshCw, Trash2, Plug } from "lucide-react";
+import { Code2, X, Eye, EyeOff, Check, AlertCircle, RefreshCw, Trash2, Plug, ChevronUp, ChevronDown } from "lucide-react";
 import { ProviderType, ModelEntry, PROVIDER_DISPLAY_NAMES } from "../../types/chat";
 import { AppSettings } from "../../types/messages";
 import { Button } from "./ui/button";
@@ -18,6 +18,7 @@ interface SettingsPanelProps {
   onUpdateSettings: (partial: Partial<AppSettings>) => void;
   onSaveModel: (entry: Omit<ModelEntry, "id" | "displayName">, apiKey?: string) => void;
   onDeleteModel: (modelId: string) => void;
+  onReorderModels: (modelIds: string[]) => void;
   onTestConnection: (modelId: string) => void;
   onReconnectMcp: () => void;
   onOpenSettingsJson: () => void;
@@ -41,6 +42,7 @@ export function SettingsPanel({
   onUpdateSettings,
   onSaveModel,
   onDeleteModel,
+  onReorderModels,
   onTestConnection,
   onReconnectMcp,
   onOpenSettingsJson,
@@ -77,6 +79,16 @@ export function SettingsPanel({
     setNewApiKey("");
     setNewEndpoint("");
     setNewDeploymentName("");
+  };
+
+  const moveModel = (modelId: string, direction: -1 | 1) => {
+    const ids = settings.models.map((m) => m.id);
+    const idx = ids.indexOf(modelId);
+    if (idx < 0) return;
+    const next = idx + direction;
+    if (next < 0 || next >= ids.length) return;
+    [ids[idx], ids[next]] = [ids[next], ids[idx]];
+    onReorderModels(ids);
   };
 
   const handleMcpChange = (value: string) => {
@@ -203,7 +215,7 @@ export function SettingsPanel({
         {settings.models.length > 0 && (
           <div className="space-y-1 mt-1">
             <Label className="text-muted-foreground">登録済みモデル</Label>
-            {settings.models.map((entry) => {
+            {settings.models.map((entry, idx) => {
               const testResult = connectionTestResult?.modelId === entry.id ? connectionTestResult : null;
               return (
                 <div key={entry.id} className="space-y-0.5">
@@ -222,6 +234,28 @@ export function SettingsPanel({
                     >
                       <Plug className="h-3 w-3 text-muted-foreground" />
                     </Button>
+                    <div className="flex flex-col shrink-0">
+                      <Button
+                        variant="ghost"
+                        size="icon-xs"
+                        onClick={() => moveModel(entry.id, -1)}
+                        disabled={idx === 0}
+                        title="上へ"
+                        className="h-3 w-5 text-muted-foreground/50 hover:text-foreground disabled:opacity-20"
+                      >
+                        <ChevronUp className="h-2.5 w-2.5" />
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        size="icon-xs"
+                        onClick={() => moveModel(entry.id, 1)}
+                        disabled={idx === settings.models.length - 1}
+                        title="下へ"
+                        className="h-3 w-5 text-muted-foreground/50 hover:text-foreground disabled:opacity-20"
+                      >
+                        <ChevronDown className="h-2.5 w-2.5" />
+                      </Button>
+                    </div>
                     <Button
                       variant="ghost"
                       size="icon-xs"

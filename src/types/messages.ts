@@ -12,6 +12,7 @@ export type WebviewToExtensionMessage =
   | { command: "setDefaultModel"; modelId: string }
   | { command: "saveModel"; entry: Omit<ModelEntry, "id" | "displayName">; apiKey?: string }
   | { command: "deleteModel"; modelId: string }
+  | { command: "reorderModels"; modelIds: string[] }
   | { command: "getSettings" }
   | { command: "updateSettings"; settings: Partial<AppSettings> }
   | { command: "deleteApiKey"; provider: ProviderType }
