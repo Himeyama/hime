@@ -36,6 +36,7 @@ export const DEFAULT_ENDPOINTS: Record<ProviderType, string> = {
   ollama: "http://localhost:11434",
   openrouter: "https://openrouter.ai/api/v1",
   google: "",
+  custom: "",
 };
 
 export const DEFAULT_MODELS: Record<ProviderType, string> = {
@@ -45,4 +46,5 @@ export const DEFAULT_MODELS: Record<ProviderType, string> = {
   ollama: "llama3.1",
   openrouter: "anthropic/claude-sonnet-4-5",
   google: "gemini-2.5-flash",
+  custom: "gpt-4o",
 };

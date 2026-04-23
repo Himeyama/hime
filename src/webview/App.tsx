@@ -4,11 +4,9 @@ import { ChatView } from "./components/ChatView";
 import { ChatList } from "./components/ChatList";
 import { SettingsPanel } from "./components/SettingsPanel";
 import { Button } from "./components/ui/button";
-import { Badge } from "./components/ui/badge";
 import { useChat } from "./hooks/useChat";
 import { useSettings } from "./hooks/useSettings";
 import { useVSCode } from "./hooks/useVSCode";
-import { ProviderType } from "../types/chat";
 import { cn } from "./lib/utils";
 import "highlight.js/styles/vs.css";
 import "./styles/index.css";
@@ -18,30 +16,24 @@ export function App() {
   const settingsHook = useSettings();
   const { postMessage } = useVSCode();
   const [showSettings, setShowSettings] = useState(false);
-  const [selectedProvider, setSelectedProvider] = useState<ProviderType>("anthropic");
+  const [selectedModelId, setSelectedModelId] = useState<string>("");
 
   useEffect(() => {
-    if (settingsHook.settings?.defaultProvider) {
-      setSelectedProvider(settingsHook.settings.defaultProvider);
+    if (settingsHook.settings?.defaultModelId) {
+      setSelectedModelId(settingsHook.settings.defaultModelId);
     }
-  }, [settingsHook.settings?.defaultProvider]);
+  }, [settingsHook.settings?.defaultModelId]);
 
-  const handleProviderChange = (provider: ProviderType) => {
-    setSelectedProvider(provider);
-    settingsHook.updateSettings({ defaultProvider: provider });
+  const handleModelChange = (modelId: string) => {
+    setSelectedModelId(modelId);
+    settingsHook.updateSettings({ defaultModelId: modelId });
   };
+
+  const models = settingsHook.settings?.models || [];
 
   const mcpStatus = settingsHook.mcpStatus;
   const mcpTotal = mcpStatus.length;
   const mcpConnected = mcpStatus.filter((s) => s.status === "connected").length;
-  const mcpBadgeVariant =
-    mcpTotal === 0
-      ? null
-      : mcpConnected === mcpTotal
-      ? "success"
-      : mcpConnected === 0
-      ? "destructive"
-      : "secondary";
 
   const appFontClass = settingsHook.settings?.fontFamily
     ? settingsHook.settings.fontFamily === "sans-serif"
@@ -58,7 +50,7 @@ export function App() {
             HIME
           </h1>
           {mcpTotal > 0 && (
-            <div 
+            <div
               className={cn(
                 "w-1.5 h-1.5 rounded-full shrink-0",
                 mcpConnected === mcpTotal ? "bg-success" : mcpConnected === 0 ? "bg-destructive" : "bg-warning"
@@ -93,8 +85,8 @@ export function App() {
           hasApiKeys={settingsHook.hasApiKeys}
           connectionTestResult={settingsHook.connectionTestResult}
           onUpdateSettings={settingsHook.updateSettings}
-          onSetApiKey={settingsHook.setApiKey}
-          onDeleteApiKey={settingsHook.deleteApiKey}
+          onSaveModel={settingsHook.saveModel}
+          onDeleteModel={settingsHook.deleteModel}
           onTestConnection={settingsHook.testConnection}
           onReconnectMcp={settingsHook.reconnectMcp}
           onOpenSettingsJson={() => postMessage({ command: "openSettingsJson" })}
@@ -119,9 +111,10 @@ export function App() {
             error={chat.error}
             loadedContextFiles={chat.loadedContextFiles}
             skillsHelp={chat.skillsHelp}
-            selectedProvider={selectedProvider}
-            onSendMessage={(content) => chat.sendMessage(content, selectedProvider)}
-            onProviderChange={handleProviderChange}
+            selectedModelId={selectedModelId}
+            models={models}
+            onSendMessage={(content) => chat.sendMessage(content, selectedModelId)}
+            onModelChange={handleModelChange}
             onClearContext={chat.clearContext}
             onCompressContext={chat.compressContext}
             onAbortStream={chat.abortStream}

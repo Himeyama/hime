@@ -1,11 +1,12 @@
 import { ProviderType } from "../types/chat";
-import { AIProvider, ProviderConfig, DEFAULT_MODELS } from "../types/provider";
+import { AIProvider, ProviderConfig } from "../types/provider";
 import { AnthropicProvider } from "./anthropic";
 import { OpenAIProvider } from "./openai";
 import { AzureOpenAIProvider } from "./azure-openai";
 import { OllamaProvider } from "./ollama";
 import { OpenRouterProvider } from "./openrouter";
 import { GoogleProvider } from "./google";
+import { CustomProvider } from "./custom";
 
 export function createProvider(config: ProviderConfig): AIProvider {
   switch (config.type) {
@@ -21,7 +22,17 @@ export function createProvider(config: ProviderConfig): AIProvider {
       return new OpenRouterProvider(config);
     case "google":
       return new GoogleProvider(config);
+    case "custom":
+      return new CustomProvider(config);
   }
 }
 
-export { AnthropicProvider, OpenAIProvider, AzureOpenAIProvider, OllamaProvider, OpenRouterProvider, GoogleProvider };
+export {
+  AnthropicProvider,
+  OpenAIProvider,
+  AzureOpenAIProvider,
+  OllamaProvider,
+  OpenRouterProvider,
+  GoogleProvider,
+  CustomProvider,
+};

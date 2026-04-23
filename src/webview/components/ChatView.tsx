@@ -2,10 +2,10 @@ import React from "react";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import { AlertCircle, Minimize2 } from "lucide-react";
-import { Chat, ProviderType, ToolCall } from "../../types/chat";
+import { Chat, ToolCall, ModelEntry } from "../../types/chat";
 import { MessageList } from "./MessageList";
 import { InputArea } from "./InputArea";
-import { ProviderSelect } from "./ProviderSelect";
+import { ModelSelect } from "./ProviderSelect";
 import { Button } from "./ui/button";
 
 interface ChatViewProps {
@@ -18,9 +18,10 @@ interface ChatViewProps {
   error: string | null;
   loadedContextFiles: string[] | null;
   skillsHelp: string | null;
-  selectedProvider: ProviderType;
+  selectedModelId: string;
+  models: ModelEntry[];
   onSendMessage: (content: string) => void;
-  onProviderChange: (provider: ProviderType) => void;
+  onModelChange: (modelId: string) => void;
   onClearContext: () => void;
   onCompressContext: () => void;
   onAbortStream: () => void;
@@ -37,9 +38,10 @@ export function ChatView({
   error,
   loadedContextFiles,
   skillsHelp,
-  selectedProvider,
+  selectedModelId,
+  models,
   onSendMessage,
-  onProviderChange,
+  onModelChange,
   onClearContext,
   onCompressContext,
   onAbortStream,
@@ -65,7 +67,11 @@ export function ChatView({
     <div className="flex flex-col flex-1 overflow-hidden">
       {/* ツールバー */}
       <div className="flex items-center gap-1 px-3 py-1 border-b border-border select-none">
-        <ProviderSelect selected={selectedProvider} onChange={onProviderChange} />
+        <ModelSelect
+          selectedModelId={selectedModelId}
+          models={models}
+          onChange={onModelChange}
+        />
         <div className="flex-1" />
         <Button variant="ghost" size="icon-xs" onClick={onCompressContext} title="Compress context">
           <Minimize2 className="h-3 w-3 text-muted-foreground/60" />
@@ -115,7 +121,7 @@ export function ChatView({
         <div className="max-w-4xl mx-auto">
           <InputArea
             onSend={onSendMessage}
-            disabled={isStreaming}
+            disabled={isStreaming || !selectedModelId || models.length === 0}
             onAbort={onAbortStream}
             isStreaming={isStreaming}
           />

@@ -1,7 +1,7 @@
 import React, { useState } from "react";
-import { Code2, X, Eye, EyeOff, Check, AlertCircle, RefreshCw } from "lucide-react";
-import { ProviderType } from "../../types/chat";
-import { AppSettings, ProviderSettings } from "../../types/messages";
+import { Code2, X, Eye, EyeOff, Check, AlertCircle, RefreshCw, Trash2, Plug } from "lucide-react";
+import { ProviderType, ModelEntry, PROVIDER_DISPLAY_NAMES } from "../../types/chat";
+import { AppSettings } from "../../types/messages";
 import { Button } from "./ui/button";
 import { Input } from "./ui/input";
 import { Textarea } from "./ui/textarea";
@@ -14,40 +14,44 @@ import { cn } from "../lib/utils";
 interface SettingsPanelProps {
   settings: AppSettings | null;
   hasApiKeys: Record<ProviderType, boolean>;
-  connectionTestResult: { provider: ProviderType; success: boolean; error?: string } | null;
+  connectionTestResult: { modelId: string; success: boolean; error?: string } | null;
   onUpdateSettings: (partial: Partial<AppSettings>) => void;
-  onSetApiKey: (provider: ProviderType, apiKey: string) => void;
-  onDeleteApiKey: (provider: ProviderType) => void;
-  onTestConnection: (provider: ProviderType) => void;
+  onSaveModel: (entry: Omit<ModelEntry, "id" | "displayName">, apiKey?: string) => void;
+  onDeleteModel: (modelId: string) => void;
+  onTestConnection: (modelId: string) => void;
   onReconnectMcp: () => void;
   onOpenSettingsJson: () => void;
   onClose: () => void;
 }
 
-const PROVIDER_NAMES: Record<ProviderType, string> = {
-  anthropic: "Anthropic",
-  openai: "OpenAI",
-  "azure-openai": "Azure OpenAI",
-  ollama: "Ollama",
-  openrouter: "OpenRouter",
-  google: "Google Gemini",
-};
+const PROVIDER_OPTIONS: { value: ProviderType; label: string }[] = [
+  { value: "anthropic", label: PROVIDER_DISPLAY_NAMES.anthropic },
+  { value: "openai", label: PROVIDER_DISPLAY_NAMES.openai },
+  { value: "azure-openai", label: PROVIDER_DISPLAY_NAMES["azure-openai"] },
+  { value: "ollama", label: PROVIDER_DISPLAY_NAMES.ollama },
+  { value: "openrouter", label: PROVIDER_DISPLAY_NAMES.openrouter },
+  { value: "google", label: PROVIDER_DISPLAY_NAMES.google },
+  { value: "custom", label: PROVIDER_DISPLAY_NAMES.custom },
+];
 
 export function SettingsPanel({
   settings,
   hasApiKeys,
   connectionTestResult,
   onUpdateSettings,
-  onSetApiKey,
-  onDeleteApiKey,
+  onSaveModel,
+  onDeleteModel,
   onTestConnection,
   onReconnectMcp,
   onOpenSettingsJson,
   onClose,
 }: SettingsPanelProps) {
-  const [selectedProvider, setSelectedProvider] = useState<ProviderType>("anthropic");
-  const [apiKeyInputs, setApiKeyInputs] = useState<Record<string, string>>({});
-  const [showApiKey, setShowApiKey] = useState<Record<string, boolean>>({});
+  const [newProvider, setNewProvider] = useState<ProviderType>("anthropic");
+  const [newModel, setNewModel] = useState("");
+  const [newApiKey, setNewApiKey] = useState("");
+  const [newEndpoint, setNewEndpoint] = useState("");
+  const [newDeploymentName, setNewDeploymentName] = useState("");
+  const [showNewApiKey, setShowNewApiKey] = useState(false);
   const [mcpJson, setMcpJson] = useState<string>(
     settings ? JSON.stringify(settings.mcpServers || {}, null, 2) : "{}"
   );
@@ -55,22 +59,24 @@ export function SettingsPanel({
 
   if (!settings) return null;
 
-  const updateProviderSetting = (provider: ProviderType, key: keyof ProviderSettings, value: string) => {
-    const current = settings.providers[provider];
-    onUpdateSettings({
-      providers: {
-        ...settings.providers,
-        [provider]: { ...current, [key]: value },
-      },
-    });
-  };
+  const needsEndpoint = newProvider === "azure-openai" || newProvider === "ollama" || newProvider === "custom";
+  const isOllama = newProvider === "ollama";
 
-  const handleSetApiKey = (provider: ProviderType) => {
-    const key = apiKeyInputs[provider];
-    if (key) {
-      onSetApiKey(provider, key);
-      setApiKeyInputs((prev) => ({ ...prev, [provider]: "" }));
-    }
+  const handleSaveModel = () => {
+    if (!newModel.trim()) return;
+    onSaveModel(
+      {
+        provider: newProvider,
+        model: newModel.trim(),
+        endpoint: needsEndpoint ? (newEndpoint.trim() || undefined) : undefined,
+        deploymentName: newProvider === "azure-openai" ? (newDeploymentName.trim() || undefined) : undefined,
+      },
+      !isOllama && newApiKey.trim() ? newApiKey.trim() : undefined
+    );
+    setNewModel("");
+    setNewApiKey("");
+    setNewEndpoint("");
+    setNewDeploymentName("");
   };
 
   const handleMcpChange = (value: string) => {
@@ -99,145 +105,160 @@ export function SettingsPanel({
         </div>
       </div>
 
-      {/* プロバイダーセクション */}
-      <div className="space-y-4">
-        <div className="space-y-2">
-          <Label>プロバイダー設定</Label>
-          <Select value={selectedProvider} onValueChange={(v) => setSelectedProvider(v as ProviderType)}>
-            <SelectTrigger className="w-full">
+      {/* モデル管理 */}
+      <div className="space-y-3">
+        <Label>モデルを追加</Label>
+
+        {/* Row 1: プロバイダ + モデル名 */}
+        <div className="flex gap-2">
+          <Select value={newProvider} onValueChange={(v) => {
+            setNewProvider(v as ProviderType);
+            setNewEndpoint("");
+            setNewDeploymentName("");
+          }}>
+            <SelectTrigger className="w-[140px] shrink-0">
               <SelectValue />
             </SelectTrigger>
             <SelectContent sideOffset={4}>
-              {(Object.keys(PROVIDER_NAMES) as ProviderType[]).map((provider) => (
-                <SelectItem key={provider} value={provider}>
-                  {PROVIDER_NAMES[provider]}
+              {PROVIDER_OPTIONS.map((p) => (
+                <SelectItem key={p.value} value={p.value}>
+                  {p.label}
                 </SelectItem>
               ))}
             </SelectContent>
           </Select>
+          <Input
+            className="flex-1"
+            placeholder="モデルID (例: claude-sonnet-4-6)"
+            value={newModel}
+            onChange={(e) => setNewModel(e.target.value)}
+            onKeyDown={(e) => { if (e.key === "Enter") handleSaveModel(); }}
+          />
         </div>
 
-        <div className="space-y-2.5 animate-fade-in">
-          {/* APIキー */}
-          {selectedProvider !== "ollama" && (
-            <div className="space-y-1">
-              <Label>
-                {selectedProvider === "google" ? "API キー (Gemini Developer API 用)" : "APIキー"}
-              </Label>
-              <div className="flex gap-1 items-center">
-                <Input
-                  type={showApiKey[selectedProvider] ? "text" : "password"}
-                  className="flex-1"
-                  value={apiKeyInputs[selectedProvider] || ""}
-                  onChange={(e) =>
-                    setApiKeyInputs((prev) => ({ ...prev, [selectedProvider]: e.target.value }))
-                  }
-                  placeholder={hasApiKeys[selectedProvider] ? "•••••（設定済み）" : "APIキーを入力"}
-                />
-                <Button
-                  variant="ghost"
-                  size="icon-xs"
-                  onClick={() =>
-                    setShowApiKey((prev) => ({ ...prev, [selectedProvider]: !prev[selectedProvider] }))
-                  }
-                  title={showApiKey[selectedProvider] ? "非表示" : "表示"}
-                >
-                  {showApiKey[selectedProvider] ? (
-                    <EyeOff className="h-3.5 w-3.5" />
-                  ) : (
-                    <Eye className="h-3.5 w-3.5" />
-                  )}
-                </Button>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => handleSetApiKey(selectedProvider)}
-                >
-                  保存
-                </Button>
-                {hasApiKeys[selectedProvider] && (
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    className="border-destructive/50 text-destructive hover:bg-destructive/10"
-                    onClick={() => onDeleteApiKey(selectedProvider)}
-                  >
-                    削除
-                  </Button>
-                )}
-              </div>
-            </div>
-          )}
-
-          {/* エンドポイント / プロジェクト ID */}
-          <div className="space-y-1">
-            <Label>
-              {selectedProvider === "google" ? "プロジェクト ID (Vertex AI 用)" : "エンドポイント"}
-            </Label>
+        {/* Row 2 (Azure): エンドポイント 3:1 デプロイメント名 */}
+        {newProvider === "azure-openai" && (
+          <div className="flex items-center gap-3">
             <Input
-              type="text"
-              value={settings.providers[selectedProvider]?.endpoint || ""}
-              onChange={(e) => updateProviderSetting(selectedProvider, "endpoint", e.target.value)}
-              placeholder="デフォルト"
+              className="flex-[3]"
+              placeholder="エンドポイント URL"
+              value={newEndpoint}
+              onChange={(e) => setNewEndpoint(e.target.value)}
+            />
+            <Input
+              className="flex-[1]"
+              placeholder="デプロイメント名"
+              value={newDeploymentName}
+              onChange={(e) => setNewDeploymentName(e.target.value)}
             />
           </div>
+        )}
 
-          {/* デプロイメント名（Azure）/ リージョン（Google） */}
-          {(selectedProvider === "azure-openai" || selectedProvider === "google") && (
-            <div className="space-y-1">
-              <Label>
-                {selectedProvider === "google" ? "リージョン (Vertex AI 用)" : "デプロイメント名"}
-              </Label>
-              <Input
-                type="text"
-                value={settings.providers[selectedProvider]?.deploymentName || ""}
-                onChange={(e) => updateProviderSetting(selectedProvider, "deploymentName", e.target.value)}
-              />
-            </div>
-          )}
+        {/* Row 2 (Ollama / Custom): エンドポイント */}
+        {(newProvider === "ollama" || newProvider === "custom") && (
+          <Input
+            placeholder={newProvider === "ollama" ? "http://localhost:11434" : "エンドポイント URL"}
+            value={newEndpoint}
+            onChange={(e) => setNewEndpoint(e.target.value)}
+          />
+        )}
 
-          {/* モデル */}
-          <div className="space-y-1">
-            <Label>モデル</Label>
-            <Input
-              type="text"
-              value={settings.providers[selectedProvider]?.model || ""}
-              onChange={(e) => updateProviderSetting(selectedProvider, "model", e.target.value)}
-            />
-          </div>
-
-          {/* 接続テスト */}
+        {/* Row 3: API キー + 保存 */}
+        <div className="flex gap-1 items-center">
+          <Input
+            type={showNewApiKey ? "text" : "password"}
+            className="flex-1"
+            placeholder={
+              isOllama
+                ? "API キー不要"
+                : hasApiKeys[newProvider]
+                ? "●●● (設定済み)"
+                : "API キー"
+            }
+            value={newApiKey}
+            onChange={(e) => setNewApiKey(e.target.value)}
+            disabled={isOllama}
+            onKeyDown={(e) => { if (e.key === "Enter") handleSaveModel(); }}
+          />
           <Button
-            variant="outline"
-            size="sm"
-            onClick={() => onTestConnection(selectedProvider)}
+            variant="ghost"
+            size="icon-xs"
+            onClick={() => setShowNewApiKey((v) => !v)}
+            disabled={isOllama}
+            title={showNewApiKey ? "非表示" : "表示"}
           >
-            接続テスト
+            {showNewApiKey ? <EyeOff className="h-3.5 w-3.5" /> : <Eye className="h-3.5 w-3.5" />}
           </Button>
-
-          {connectionTestResult?.provider === selectedProvider && (
-            <div
-              className={cn(
-                "text-xs px-2.5 py-1.5 rounded-md animate-fade-in flex items-center gap-1.5",
-                connectionTestResult.success
-                  ? "text-success bg-success/10"
-                  : "text-destructive bg-destructive/10"
-              )}
-            >
-              {connectionTestResult.success ? (
-                <>
-                  <Check className="h-3 w-3 shrink-0" />
-                  接続成功
-                </>
-              ) : (
-                <>
-                  <AlertCircle className="h-3 w-3 shrink-0" />
-                  {connectionTestResult.error}
-                </>
-              )}
-            </div>
-          )}
+          <Button
+            variant="default"
+            size="sm"
+            onClick={handleSaveModel}
+            disabled={!newModel.trim()}
+          >
+            追加
+          </Button>
         </div>
+
+        {/* 登録済みモデル一覧 */}
+        {settings.models.length > 0 && (
+          <div className="space-y-1 mt-1">
+            <Label className="text-muted-foreground">登録済みモデル</Label>
+            {settings.models.map((entry) => {
+              const testResult = connectionTestResult?.modelId === entry.id ? connectionTestResult : null;
+              return (
+                <div key={entry.id} className="space-y-0.5">
+                  <div className="flex items-center gap-1 py-1 px-2 rounded-md hover:bg-muted/40">
+                    <span className="flex-1 text-xs truncate" title={entry.displayName}>
+                      {entry.displayName}
+                      {settings.defaultModelId === entry.id && (
+                        <span className="ml-1.5 text-[10px] text-muted-foreground">(デフォルト)</span>
+                      )}
+                    </span>
+                    <Button
+                      variant="ghost"
+                      size="icon-xs"
+                      onClick={() => onTestConnection(entry.id)}
+                      title="接続テスト"
+                    >
+                      <Plug className="h-3 w-3 text-muted-foreground" />
+                    </Button>
+                    <Button
+                      variant="ghost"
+                      size="icon-xs"
+                      onClick={() => onDeleteModel(entry.id)}
+                      title="削除"
+                      className="text-destructive/60 hover:text-destructive hover:bg-destructive/10"
+                    >
+                      <Trash2 className="h-3 w-3" />
+                    </Button>
+                  </div>
+                  {testResult && (
+                    <div
+                      className={cn(
+                        "text-[10px] px-2.5 py-1 rounded-md flex items-center gap-1 animate-fade-in",
+                        testResult.success
+                          ? "text-success bg-success/10"
+                          : "text-destructive bg-destructive/10"
+                      )}
+                    >
+                      {testResult.success ? (
+                        <><Check className="h-3 w-3 shrink-0" /> 接続成功</>
+                      ) : (
+                        <><AlertCircle className="h-3 w-3 shrink-0" /> {testResult.error}</>
+                      )}
+                    </div>
+                  )}
+                </div>
+              );
+            })}
+          </div>
+        )}
+
+        {settings.models.length === 0 && (
+          <p className="text-[11px] text-muted-foreground text-center py-2 select-none">
+            モデルが登録されていません
+          </p>
+        )}
       </div>
 
       <Separator className="my-4" />
@@ -307,7 +328,7 @@ export function SettingsPanel({
             )}
             value={mcpJson}
             onChange={(e) => handleMcpChange(e.target.value)}
-            placeholder='{ 
+            placeholder='{
   "my-server": { "command": "node", "args": ["server.js"] },
   "drawio-local": { "command": "npx", "args": ["-y", "drawio-mcp-server"] },
   "sse-server": { "url": "https://mcp.example.com/sse" }

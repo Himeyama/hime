@@ -11,7 +11,7 @@ import { ActiveEditorTracker } from "./context/active-editor";
 import { loadProjectContext } from "./context/workspace-files";
 import { buildSystemPromptParts } from "./context/system-prompt";
 import { loadAllSkills, findSkill, expandSkillPrompt, buildSkillsHelpText, buildHelpText } from "./skills/loader";
-import { ProviderType, Message } from "./types/chat";
+import { ProviderType, Message, ModelEntry, generateModelDisplayName } from "./types/chat";
 import { AIProvider, ProviderConfig } from "./types/provider";
 import { WebviewToExtensionMessage, ExtensionToWebviewMessage, AppSettings } from "./types/messages";
 
@@ -27,23 +27,19 @@ export async function activate(context: vscode.ExtensionContext) {
   outputChannel = vscode.window.createOutputChannel("Hime");
   context.subscriptions.push(outputChannel);
 
-  // Initialize storage
   chatStorage = new ChatHistoryStorage(outputChannel);
   settingsStorage = new SettingsStorage();
   await chatStorage.initialize();
   await settingsStorage.initialize();
 
-  // Initialize MCP
   mcpClient = new MCPClientManager(outputChannel);
   toolExecutor = new ToolExecutor(mcpClient);
 
-  // Register webview provider
   const provider = new HimeChatViewProvider(context);
   context.subscriptions.push(
     vscode.window.registerWebviewViewProvider("hime.chatView", provider)
   );
 
-  // Connect MCP servers and notify webview when done
   const workspacePath = vscode.workspace.workspaceFolders?.[0]?.uri.fsPath;
   if (workspacePath) {
     settingsStorage.load().then(async (settings) => {
@@ -56,7 +52,6 @@ export async function activate(context: vscode.ExtensionContext) {
     });
   }
 
-  // Register commands
   context.subscriptions.push(
     vscode.commands.registerCommand("hime.newChat", () => {
       provider.postMessage({ command: "createChat" } as any);
@@ -83,7 +78,6 @@ export async function activate(context: vscode.ExtensionContext) {
     })
   );
 
-  // Active editor tracking
   activeEditorTracker = new ActiveEditorTracker((filePath, language) => {
     if (provider.webviewView) {
       provider.sendToWebview({ type: "activeEditorChanged", filePath, language });
@@ -133,7 +127,9 @@ class HimeChatViewProvider implements vscode.WebviewViewProvider {
       switch (message.command) {
         case "createChat": {
           const settings = await settingsStorage.load();
-          const chat = await chatStorage.createChat(settings.defaultProvider);
+          const entry = settings.models.find((m) => m.id === settings.defaultModelId);
+          const providerType = entry?.provider || "anthropic";
+          const chat = await chatStorage.createChat(providerType);
           this.sendToWebview({ type: "chatCreated", chat });
           await this.sendChatList();
           break;
@@ -156,7 +152,7 @@ class HimeChatViewProvider implements vscode.WebviewViewProvider {
           break;
         }
         case "sendMessage": {
-          await this.handleSendMessage(message.chatId, message.content, message.provider, message.attachments);
+          await this.handleSendMessage(message.chatId, message.content, message.modelId, message.attachments);
           break;
         }
         case "abortStream": {
@@ -183,14 +179,46 @@ class HimeChatViewProvider implements vscode.WebviewViewProvider {
           await this.handleCompressContext(message.chatId);
           break;
         }
-        case "setProvider": {
+        case "saveModel": {
           const settings = await settingsStorage.load();
-          settings.defaultProvider = message.provider;
+          const { entry: entryData, apiKey } = message;
+
+          if (apiKey && entryData.provider !== "ollama") {
+            await this.context.secrets.store(`hime.apiKey.${entryData.provider}`, apiKey);
+          }
+
+          const newEntry: ModelEntry = {
+            id: crypto.randomUUID(),
+            provider: entryData.provider,
+            model: entryData.model,
+            endpoint: entryData.endpoint,
+            deploymentName: entryData.deploymentName,
+            displayName: generateModelDisplayName(entryData.provider, entryData.model),
+          };
+
+          settings.models.push(newEntry);
+
+          if (!settings.defaultModelId || !settings.models.find((m) => m.id === settings.defaultModelId)) {
+            settings.defaultModelId = newEntry.id;
+          }
+
           await settingsStorage.save(settings);
+          await this.sendSettings();
           break;
         }
-        case "listModels": {
-          await this.handleListModels(message.provider);
+        case "deleteModel": {
+          const settings = await settingsStorage.load();
+          settings.models = settings.models.filter((m) => m.id !== message.modelId);
+          if (settings.defaultModelId === message.modelId) {
+            settings.defaultModelId = settings.models[0]?.id || "";
+          }
+          await settingsStorage.save(settings);
+          await this.sendSettings();
+          break;
+        }
+        case "setDefaultModel": {
+          await settingsStorage.update({ defaultModelId: message.modelId });
+          await this.sendSettings();
           break;
         }
         case "getSettings": {
@@ -202,18 +230,13 @@ class HimeChatViewProvider implements vscode.WebviewViewProvider {
           await this.sendSettings();
           break;
         }
-        case "setApiKey": {
-          await this.context.secrets.store(`hime.apiKey.${message.provider}`, message.apiKey);
-          await this.sendSettings();
-          break;
-        }
         case "deleteApiKey": {
           await this.context.secrets.delete(`hime.apiKey.${message.provider}`);
           await this.sendSettings();
           break;
         }
         case "testConnection": {
-          await this.handleTestConnection(message.provider);
+          await this.handleTestConnection(message.modelId);
           break;
         }
         case "listMcpTools": {
@@ -240,7 +263,7 @@ class HimeChatViewProvider implements vscode.WebviewViewProvider {
           break;
         }
         case "executeSkill": {
-          await this.handleExecuteSkill(message.chatId, message.skillName, message.args, message.provider);
+          await this.handleExecuteSkill(message.chatId, message.skillName, message.args, message.modelId);
           break;
         }
         case "listSkills": {
@@ -276,12 +299,18 @@ class HimeChatViewProvider implements vscode.WebviewViewProvider {
   private async handleSendMessage(
     chatId: string,
     content: string,
-    providerType: ProviderType,
+    modelId: string,
     attachments?: import("./types/chat").Attachment[]
   ) {
+    const settings = await settingsStorage.load();
+    const entry = settings.models.find((m) => m.id === modelId);
+    if (!entry) {
+      this.sendToWebview({ type: "error", chatId, error: `モデルが見つかりません: ${modelId}` });
+      return;
+    }
+
     const chat = await chatStorage.loadChat(chatId);
 
-    // Add user message
     const userMessage: Message = {
       id: crypto.randomUUID(),
       role: "user",
@@ -290,24 +319,20 @@ class HimeChatViewProvider implements vscode.WebviewViewProvider {
       attachments,
     };
     chat.messages.push(userMessage);
-    chat.provider = providerType;
+    chat.provider = entry.provider;
 
-    // Auto-title on first message
     if (chat.messages.filter((m: Message) => m.role === "user").length === 1) {
       chat.title = content.slice(0, 50) + (content.length > 50 ? "..." : "");
     }
 
     await chatStorage.saveChat(chat);
 
-    // Build system prompt
     const workspacePath = vscode.workspace.workspaceFolders?.[0]?.uri.fsPath || "";
-    const settings = await settingsStorage.load();
     const projectContext = settings.autoLoadProjectFiles !== false
       ? await loadProjectContext()
       : {};
     const activeFilePath = activeEditorTracker.getContext()?.filePath;
 
-    // Notify webview about loaded project context files
     const loadedFiles: string[] = [];
     if (projectContext.claudeMd) loadedFiles.push("CLAUDE.md");
     if (projectContext.agentsMd) loadedFiles.push("AGENTS.md");
@@ -315,27 +340,25 @@ class HimeChatViewProvider implements vscode.WebviewViewProvider {
     if (loadedFiles.length > 0) {
       this.sendToWebview({ type: "projectContextLoaded", files: loadedFiles });
     }
+
     const systemPrompt = buildSystemPromptParts({
       workspacePath,
-      model: settings.providers[providerType]?.model,
+      model: entry.model,
       activeFilePath,
       projectContext,
       userSystemPrompt: settings.systemPrompt,
     });
 
-    // Create provider
-    const apiKey = await this.context.secrets.get(`hime.apiKey.${providerType}`);
-    const providerSettings = settings.providers[providerType];
+    const apiKey = await this.context.secrets.get(`hime.apiKey.${entry.provider}`);
     const providerConfig: ProviderConfig = {
-      type: providerType,
+      type: entry.provider,
       apiKey: apiKey || undefined,
-      endpoint: providerSettings?.endpoint || undefined,
-      deploymentName: providerSettings?.deploymentName || undefined,
-      model: providerSettings?.model || "default",
+      endpoint: entry.endpoint || undefined,
+      deploymentName: entry.deploymentName || undefined,
+      model: entry.model,
     };
     const provider = createProvider(providerConfig);
 
-    // Get messages after last context clear
     const lastClearIdx = [...chat.messages].reverse().findIndex((m) => m.contextClearMark);
     const relevantMessages = lastClearIdx >= 0
       ? chat.messages.slice(chat.messages.length - lastClearIdx)
@@ -345,28 +368,24 @@ class HimeChatViewProvider implements vscode.WebviewViewProvider {
     currentAbortController = new AbortController();
 
     try {
-      // MCP tools
-      const mcpTools = toolExecutor.getToolDefinitions();
-      let hasTools = mcpTools.length > 0;
-
       const assistantMessage: Message = {
         id: messageId,
         role: "assistant",
         content: "",
         timestamp: new Date().toISOString(),
-        provider: providerType,
-        model: providerConfig.model,
+        provider: entry.provider,
+        model: entry.model,
         toolCalls: [],
       };
 
       outputChannel.appendLine(`\n${"=".repeat(60)}`);
       outputChannel.appendLine(`[${new Date().toISOString()}] REQUEST`);
       outputChannel.appendLine(JSON.stringify({
-        provider: providerType,
-        model: providerConfig.model,
+        provider: entry.provider,
+        model: entry.model,
         systemPrompt,
         messages: relevantMessages,
-        tools: toolExecutor.getToolsForProvider(providerType),
+        tools: toolExecutor.getToolsForProvider(entry.provider),
       }, null, 2));
 
       const finalAssistantMessage = await provider.chat(
@@ -424,7 +443,7 @@ class HimeChatViewProvider implements vscode.WebviewViewProvider {
           this.sendToWebview({ type: "toolCall", chatId, messageId, toolCall: tc });
         },
         currentAbortController.signal,
-        toolExecutor.getToolsForProvider(providerType)
+        toolExecutor.getToolsForProvider(entry.provider)
       );
 
       assistantMessage.content = finalAssistantMessage.content;
@@ -437,14 +456,14 @@ class HimeChatViewProvider implements vscode.WebviewViewProvider {
         const nonCachedInput = u.inputTokens - cacheTokens;
         outputChannel.appendLine(`[tokens] input: ${nonCachedInput} tok, cache: ${cacheTokens} tok, output: ${u.outputTokens} tok`);
       }
-      
+
       if (!chat.messages.find((m: Message) => m.id === messageId)) {
         chat.messages.push(assistantMessage);
       } else {
         const idx = chat.messages.findIndex((m: Message) => m.id === messageId);
         chat.messages[idx] = assistantMessage;
       }
-      
+
       chat.updatedAt = new Date().toISOString();
       await chatStorage.saveChat(chat);
       await this.sendChatList();
@@ -468,7 +487,7 @@ class HimeChatViewProvider implements vscode.WebviewViewProvider {
     chatId: string,
     skillName: string,
     args: string,
-    providerType: ProviderType
+    modelId: string
   ) {
     const workspacePath = vscode.workspace.workspaceFolders?.[0]?.uri.fsPath || "";
     const skill = await findSkill(skillName, workspacePath);
@@ -481,23 +500,19 @@ class HimeChatViewProvider implements vscode.WebviewViewProvider {
       return;
     }
 
-    // Get current selection and active file
     const editor = vscode.window.activeTextEditor;
     const selection = editor ? editor.document.getText(editor.selection) : "";
     const activeFilePath = activeEditorTracker.getContext()?.filePath || "";
 
-    // Expand variables
     const expandedPrompt = expandSkillPrompt(skill.prompt, {
       arguments: args,
       selection: selection || undefined,
       activeFile: activeFilePath || undefined,
     });
 
-    // Notify webview that skill was executed
     this.sendToWebview({ type: "skillExecuted", chatId, skillName, expandedPrompt });
 
-    // Send as a normal message
-    await this.handleSendMessage(chatId, expandedPrompt, providerType);
+    await this.handleSendMessage(chatId, expandedPrompt, modelId);
   }
 
   private async handleListSkills() {
@@ -517,14 +532,19 @@ class HimeChatViewProvider implements vscode.WebviewViewProvider {
   private async handleCompressContext(chatId: string) {
     const chat = await chatStorage.loadChat(chatId);
     const settings = await settingsStorage.load();
-    const apiKey = await this.context.secrets.get(`hime.apiKey.${chat.provider}`);
-    const providerSettings = (settings.providers as any)[chat.provider];
+    const entry = settings.models.find((m) => m.id === settings.defaultModelId);
+    if (!entry) {
+      this.sendToWebview({ type: "error", chatId, error: "デフォルトモデルが設定されていません" });
+      return;
+    }
 
+    const apiKey = await this.context.secrets.get(`hime.apiKey.${entry.provider}`);
     const provider = createProvider({
-      type: chat.provider,
+      type: entry.provider,
       apiKey: apiKey || undefined,
-      endpoint: providerSettings?.endpoint || undefined,
-      model: providerSettings?.model || "default",
+      endpoint: entry.endpoint || undefined,
+      deploymentName: entry.deploymentName || undefined,
+      model: entry.model,
     });
 
     const summary = await provider.chat(
@@ -543,7 +563,6 @@ class HimeChatViewProvider implements vscode.WebviewViewProvider {
       undefined
     );
 
-    // Add context clear and summary
     chat.messages.push(
       {
         id: crypto.randomUUID(),
@@ -564,47 +583,30 @@ class HimeChatViewProvider implements vscode.WebviewViewProvider {
     this.sendToWebview({ type: "chatLoaded", chat });
   }
 
-  private async handleListModels(providerType: ProviderType) {
-    try {
-      const settings = await settingsStorage.load();
-      const apiKey = await this.context.secrets.get(`hime.apiKey.${providerType}`);
-      const providerSettings = settings.providers[providerType];
-
-      const provider = createProvider({
-        type: providerType,
-        apiKey: apiKey || undefined,
-        endpoint: providerSettings?.endpoint || undefined,
-        model: providerSettings?.model || "default",
-      });
-
-      const models = await provider.listModels();
-      this.sendToWebview({ type: "modelList", provider: providerType, models });
-    } catch (err: any) {
-      console.error("Failed to list models:", err);
-    }
-  }
-
-  private async handleTestConnection(providerType: ProviderType) {
+  private async handleTestConnection(modelId: string) {
     outputChannel.appendLine(`\n${"=".repeat(60)}`);
-    outputChannel.appendLine(`[${new Date().toISOString()}] CONNECTION TEST: ${providerType}`);
+    outputChannel.appendLine(`[${new Date().toISOString()}] CONNECTION TEST: ${modelId}`);
     try {
       const settings = await settingsStorage.load();
-      const apiKey = await this.context.secrets.get(`hime.apiKey.${providerType}`);
-      const providerSettings = settings.providers[providerType];
+      const entry = settings.models.find((m) => m.id === modelId);
+      if (!entry) throw new Error(`モデルが見つかりません: ${modelId}`);
 
+      const apiKey = await this.context.secrets.get(`hime.apiKey.${entry.provider}`);
       const provider = createProvider({
-        type: providerType,
+        type: entry.provider,
         apiKey: apiKey || undefined,
-        endpoint: providerSettings?.endpoint || undefined,
-        model: providerSettings?.model || "default",
+        endpoint: entry.endpoint || undefined,
+        deploymentName: entry.deploymentName || undefined,
+        model: entry.model,
       });
 
-      outputChannel.appendLine(`endpoint: ${providerSettings?.endpoint ?? "(default)"}`);
-      outputChannel.appendLine(`model: ${providerSettings?.model ?? "default"}`);
+      outputChannel.appendLine(`provider: ${entry.provider}`);
+      outputChannel.appendLine(`model: ${entry.model}`);
+      outputChannel.appendLine(`endpoint: ${entry.endpoint ?? "(default)"}`);
 
-      const success = await provider.testConnection();
+      await provider.testConnection();
       outputChannel.appendLine(`result: OK`);
-      this.sendToWebview({ type: "connectionTestResult", provider: providerType, success });
+      this.sendToWebview({ type: "connectionTestResult", modelId, success: true });
     } catch (err: any) {
       outputChannel.appendLine(`result: FAILED`);
       outputChannel.appendLine(`message: ${err.message || String(err)}`);
@@ -614,21 +616,12 @@ class HimeChatViewProvider implements vscode.WebviewViewProvider {
       if (err.error) {
         outputChannel.appendLine(`body: ${JSON.stringify(err.error, null, 2)}`);
       }
-      if (err.headers) {
-        const relevant = ["x-request-id", "cf-ray", "x-ratelimit-remaining-requests"];
-        const picked = Object.fromEntries(
-          relevant.filter((k) => err.headers[k]).map((k) => [k, err.headers[k]])
-        );
-        if (Object.keys(picked).length > 0) {
-          outputChannel.appendLine(`headers: ${JSON.stringify(picked)}`);
-        }
-      }
       if (err.stack) {
         outputChannel.appendLine(`stack:\n${err.stack}`);
       }
       this.sendToWebview({
         type: "connectionTestResult",
-        provider: providerType,
+        modelId,
         success: false,
         error: err.message || String(err),
       });
@@ -666,6 +659,7 @@ class HimeChatViewProvider implements vscode.WebviewViewProvider {
       ollama: true,
       openrouter: !!(await this.context.secrets.get("hime.apiKey.openrouter")),
       google: !!(await this.context.secrets.get("hime.apiKey.google")),
+      custom: !!(await this.context.secrets.get("hime.apiKey.custom")),
     };
     this.sendToWebview({ type: "settings", settings, hasApiKeys });
   }

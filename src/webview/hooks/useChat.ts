@@ -1,5 +1,5 @@
 import { useState, useCallback, useEffect, useRef } from "react";
-import { Chat, Message, ProviderType, ChatMeta, ToolCall } from "../../types/chat";
+import { Chat, Message, ChatMeta, ToolCall } from "../../types/chat";
 import { ExtensionToWebviewMessage } from "../../types/messages";
 import { useVSCode } from "./useVSCode";
 
@@ -15,7 +15,6 @@ export function useChat() {
   const [loadedContextFiles, setLoadedContextFiles] = useState<string[] | null>(null);
   const [skillsHelp, setSkillsHelp] = useState<string | null>(null);
 
-  // Keep a ref to currentChat.id so the message handler always sees the latest value
   const currentChatIdRef = useRef<string | null>(null);
   currentChatIdRef.current = currentChat?.id ?? null;
 
@@ -100,7 +99,6 @@ export function useChat() {
           setSkillsHelp(msg.content);
           break;
         case "skillExecuted":
-          // Add skill execution as a user message in the UI
           if (msg.chatId === chatId) {
             setCurrentChat((prev) => {
               if (!prev) return prev;
@@ -126,11 +124,10 @@ export function useChat() {
   }, [onMessage]);
 
   const sendMessage = useCallback(
-    (content: string, provider: ProviderType) => {
+    (content: string, modelId: string) => {
       if (!currentChat) return;
       setError(null);
 
-      // Handle built-in commands
       const trimmed = content.trim();
       if (trimmed === "/help") {
         postMessage({ command: "listHelp" });
@@ -149,7 +146,6 @@ export function useChat() {
         return;
       }
 
-      // Handle /skill-name commands
       const skillMatch = content.trim().match(/^\/([a-zA-Z][\w-]*)\s*([\s\S]*)$/);
       if (skillMatch) {
         const skillName = skillMatch[1];
@@ -159,7 +155,7 @@ export function useChat() {
           chatId: currentChat.id,
           skillName,
           args: skillArgs,
-          provider,
+          modelId,
         });
         return;
       }
@@ -181,7 +177,7 @@ export function useChat() {
         command: "sendMessage",
         chatId: currentChat.id,
         content,
-        provider,
+        modelId,
       });
     },
     [currentChat, postMessage]
@@ -202,16 +198,14 @@ export function useChat() {
     (chatId: string) => {
       const remaining = chats.filter((c) => c.id !== chatId);
       setChats(remaining);
-      
+
       postMessage({ command: "deleteChat", chatId });
-      
+
       if (currentChatIdRef.current === chatId) {
         setCurrentChat(null);
         if (remaining.length > 0) {
-          // 他にチャットがある場合は、最初のチャットを読み込む
           postMessage({ command: "loadChat", chatId: remaining[0].id });
         } else {
-          // チャットが1つもなくなった場合のみ新規作成
           postMessage({ command: "createChat" });
         }
       }

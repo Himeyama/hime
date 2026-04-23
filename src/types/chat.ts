@@ -65,4 +65,34 @@ export interface ChatsIndex {
   chats: ChatMeta[];
 }
 
-export type ProviderType = "anthropic" | "openai" | "azure-openai" | "ollama" | "openrouter" | "google";
+export type ProviderType =
+  | "anthropic"
+  | "openai"
+  | "azure-openai"
+  | "ollama"
+  | "openrouter"
+  | "google"
+  | "custom";
+
+export interface ModelEntry {
+  id: string;
+  provider: ProviderType;
+  model: string;
+  endpoint?: string;
+  deploymentName?: string;
+  displayName: string;
+}
+
+export const PROVIDER_DISPLAY_NAMES: Record<ProviderType, string> = {
+  anthropic: "Anthropic",
+  openai: "OpenAI",
+  "azure-openai": "Azure OpenAI",
+  ollama: "Ollama",
+  openrouter: "OpenRouter",
+  google: "Google Gemini",
+  custom: "Custom",
+};
+
+export function generateModelDisplayName(provider: ProviderType, model: string): string {
+  return `${PROVIDER_DISPLAY_NAMES[provider]} / ${model}`;
+}

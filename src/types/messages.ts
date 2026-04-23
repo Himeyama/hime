@@ -1,21 +1,21 @@
-import { ProviderType, Attachment, ChatMeta, ToolCall } from "./chat";
+import { ProviderType, Attachment, ChatMeta, ToolCall, ModelEntry } from "./chat";
 import { MCPServerConfig } from "./mcp";
 
 // Webview → Extension
 export type WebviewToExtensionMessage =
-  | { command: "sendMessage"; chatId: string; content: string; provider: ProviderType; attachments?: Attachment[] }
+  | { command: "sendMessage"; chatId: string; content: string; modelId: string; attachments?: Attachment[] }
   | { command: "createChat" }
   | { command: "loadChat"; chatId: string }
   | { command: "deleteChat"; chatId: string }
   | { command: "clearContext"; chatId: string }
   | { command: "compressContext"; chatId: string }
-  | { command: "setProvider"; provider: ProviderType }
-  | { command: "listModels"; provider: ProviderType }
+  | { command: "setDefaultModel"; modelId: string }
+  | { command: "saveModel"; entry: Omit<ModelEntry, "id" | "displayName">; apiKey?: string }
+  | { command: "deleteModel"; modelId: string }
   | { command: "getSettings" }
   | { command: "updateSettings"; settings: Partial<AppSettings> }
-  | { command: "setApiKey"; provider: ProviderType; apiKey: string }
   | { command: "deleteApiKey"; provider: ProviderType }
-  | { command: "testConnection"; provider: ProviderType }
+  | { command: "testConnection"; modelId: string }
   | { command: "listMcpTools" }
   | { command: "reconnectMcp" }
   | { command: "abortStream" }
@@ -23,7 +23,7 @@ export type WebviewToExtensionMessage =
   | { command: "addReaction"; chatId: string; messageId: string; reaction: "thumbsUp" | "thumbsDown" }
   | { command: "getChatList" }
   | { command: "getMcpStatus" }
-  | { command: "executeSkill"; chatId: string; skillName: string; args: string; provider: ProviderType }
+  | { command: "executeSkill"; chatId: string; skillName: string; args: string; modelId: string }
   | { command: "listSkills" }
   | { command: "listHelp" };
 
@@ -37,9 +37,8 @@ export type ExtensionToWebviewMessage =
   | { type: "chatListUpdate"; chats: ChatMeta[] }
   | { type: "chatLoaded"; chat: import("./chat").Chat }
   | { type: "chatCreated"; chat: import("./chat").Chat }
-  | { type: "modelList"; provider: ProviderType; models: string[] }
   | { type: "settings"; settings: AppSettings; hasApiKeys: Record<ProviderType, boolean> }
-  | { type: "connectionTestResult"; provider: ProviderType; success: boolean; error?: string }
+  | { type: "connectionTestResult"; modelId: string; success: boolean; error?: string }
   | { type: "activeEditorChanged"; filePath: string; language: string }
   | { type: "mcpTools"; tools: import("./mcp").MCPTool[] }
   | { type: "mcpStatus"; servers: { name: string; status: "connected" | "disconnected" | "error"; toolCount: number }[] }
@@ -48,15 +47,9 @@ export type ExtensionToWebviewMessage =
   | { type: "skillExecuted"; chatId: string; skillName: string; expandedPrompt: string }
   | { type: "helpContent"; content: string };
 
-export interface ProviderSettings {
-  endpoint?: string;
-  deploymentName?: string;
-  model: string;
-}
-
 export interface AppSettings {
-  defaultProvider: ProviderType;
-  providers: Record<ProviderType, ProviderSettings>;
+  defaultModelId: string;
+  models: ModelEntry[];
   systemPrompt: string;
   fontFamily?: "serif" | "sans-serif";
   mcpServers?: Record<string, MCPServerConfig>;

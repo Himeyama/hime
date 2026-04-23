@@ -1,8 +1,7 @@
 import { useState, useCallback, useEffect } from "react";
-import { ExtensionToWebviewMessage } from "../../types/messages";
+import { ExtensionToWebviewMessage, AppSettings } from "../../types/messages";
 import { useVSCode } from "./useVSCode";
-import { ProviderType } from "../../types/chat";
-import { AppSettings } from "../../types/messages";
+import { ProviderType, ModelEntry } from "../../types/chat";
 
 export function useSettings() {
   const { postMessage, onMessage } = useVSCode();
@@ -11,23 +10,16 @@ export function useSettings() {
     anthropic: false,
     openai: false,
     "azure-openai": false,
-    ollama: false,
+    ollama: true,
     openrouter: false,
     google: false,
+    custom: false,
   });
   const [connectionTestResult, setConnectionTestResult] = useState<{
-    provider: ProviderType;
+    modelId: string;
     success: boolean;
     error?: string;
   } | null>(null);
-  const [models, setModels] = useState<Record<ProviderType, string[]>>({
-    anthropic: [],
-    openai: [],
-    "azure-openai": [],
-    ollama: [],
-    openrouter: [],
-    google: [],
-  });
   const [mcpStatus, setMcpStatus] = useState<{ name: string; status: "connected" | "disconnected" | "error"; toolCount: number }[]>([]);
 
   useEffect(() => {
@@ -42,13 +34,10 @@ export function useSettings() {
           break;
         case "connectionTestResult":
           setConnectionTestResult({
-            provider: msg.provider,
+            modelId: msg.modelId,
             success: msg.success,
             error: msg.error,
           });
-          break;
-        case "modelList":
-          setModels((prev) => ({ ...prev, [msg.provider]: msg.models }));
           break;
         case "mcpStatus":
           setMcpStatus(msg.servers);
@@ -65,31 +54,24 @@ export function useSettings() {
     [postMessage]
   );
 
-  const setApiKey = useCallback(
-    (provider: ProviderType, apiKey: string) => {
-      postMessage({ command: "setApiKey", provider, apiKey });
+  const saveModel = useCallback(
+    (entry: Omit<ModelEntry, "id" | "displayName">, apiKey?: string) => {
+      postMessage({ command: "saveModel", entry, apiKey });
     },
     [postMessage]
   );
 
-  const deleteApiKey = useCallback(
-    (provider: ProviderType) => {
-      postMessage({ command: "deleteApiKey", provider });
+  const deleteModel = useCallback(
+    (modelId: string) => {
+      postMessage({ command: "deleteModel", modelId });
     },
     [postMessage]
   );
 
   const testConnection = useCallback(
-    (provider: ProviderType) => {
+    (modelId: string) => {
       setConnectionTestResult(null);
-      postMessage({ command: "testConnection", provider });
-    },
-    [postMessage]
-  );
-
-  const listModels = useCallback(
-    (provider: ProviderType) => {
-      postMessage({ command: "listModels", provider });
+      postMessage({ command: "testConnection", modelId });
     },
     [postMessage]
   );
@@ -102,13 +84,11 @@ export function useSettings() {
     settings,
     hasApiKeys,
     connectionTestResult,
-    models,
     mcpStatus,
     updateSettings,
-    setApiKey,
-    deleteApiKey,
+    saveModel,
+    deleteModel,
     testConnection,
-    listModels,
     reconnectMcp,
   };
 }
