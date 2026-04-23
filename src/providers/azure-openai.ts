@@ -1,5 +1,5 @@
 import { generateText } from "ai";
-import { createAzure } from "@ai-sdk/azure";
+import { AzureOpenAIProviderSettings, createAzure } from "@ai-sdk/azure";
 import type { LanguageModel } from "ai";
 import { VercelBaseProvider } from "./vercel-base";
 import type { ProviderType } from "../types/chat";
@@ -9,16 +9,26 @@ export class AzureOpenAIProvider extends VercelBaseProvider {
   readonly displayName = "Azure OpenAI";
 
   protected createModel(): LanguageModel {
+    if (this.config.deploymentName) {
+      return createAzure({
+        baseURL: this.config.endpoint,
+        apiKey: this.config.apiKey,
+        apiVersion: "2024-06-01",
+      })(this.config.deploymentName);
+    }
+
     return createAzure({
       baseURL: this.config.endpoint,
       apiKey: this.config.apiKey,
       apiVersion: "2024-06-01",
-      useDeploymentBasedUrls: true,
-    })(this.config.deploymentName || this.config.model);
+      fetch: (input: RequestInfo | URL, init?: RequestInit) => {
+        return fetch(this.config.endpoint!, init);
+      }
+    })(this.config.model);
   }
 
   async listModels(): Promise<string[]> {
-    return ["o1-preview", "o1-mini", "gpt-4o", "gpt-4o-mini", "gpt-4-turbo", "gpt-4", "gpt-35-turbo"];
+    return ["gpt-5-mini", "gpt-5.1", "gpt-5.4-mini", "gpt-5.4", "gpt-5.4-nano"];
   }
 
   async testConnection(): Promise<boolean> {
