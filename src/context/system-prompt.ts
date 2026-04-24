@@ -6,6 +6,7 @@ type Params = {
   activeFilePath?: string | null;
   projectContext: { claudeMd?: string; agentsMd?: string; readmeMd?: string };
   userSystemPrompt?: string;
+  vscodeTheme?: "dark" | "light";
 };
 
 const STATIC_INSTRUCTIONS = `あなたは高度なソフトウェアエンジニアリング能力を持つ AI アシスタントです。ユーザーの要望に対し、正確かつ効率的な解決策を直接実行または提案します。
@@ -41,7 +42,7 @@ const STATIC_INSTRUCTIONS = `あなたは高度なソフトウェアエンジニ
 全ての応答、解説、コメントは**日本語**で行ってください。ただし、技術用語やコード内の識別子は元の形式を維持してください。`;
 
 export function buildSystemPromptParts(params: Params): { staticPart: string; dynamicPart: string } {
-  const { workspacePath, model, activeFilePath, projectContext, userSystemPrompt } = params;
+  const { workspacePath, model, activeFilePath, projectContext, userSystemPrompt, vscodeTheme } = params;
 
   const platform = process.platform;
   const osName = platform === "win32" ? "Windows" : platform === "darwin" ? "macOS" : "Linux";
@@ -59,8 +60,27 @@ export function buildSystemPromptParts(params: Params): { staticPart: string; dy
       `| Platform | ${platform} |\n` +
       `| Shell | ${shell} |\n` +
       `| OS version | ${osVersion} |\n` +
-      (model ? `| Model | ${model} |\n` : "")
+      (model ? `| Model | ${model} |\n` : "") +
+      (vscodeTheme ? `| VSCode theme | ${vscodeTheme} |\n` : "")
   );
+
+  // Theme-aware HTML generation hint
+  if (vscodeTheme) {
+    const isDark = vscodeTheme === "dark";
+    dynamicSections.push(
+      `## UI Generation Guidelines\n` +
+        `VSCode のカラーテーマは **${isDark ? "ダーク" : "ライト"}** です。HTML アプリや UI を生成する際は以下に従ってください:\n` +
+        (isDark
+          ? `- 背景: ダーク系 (例: #1e1e1e, #252526, #2d2d2d, または Tailwind の neutral-900/950)\n` +
+            `- テキスト: 明るい系 (例: #d4d4d4, #cccccc, または Tailwind の neutral-100/200)\n` +
+            `- アクセント: VSCode ブルー (#007acc, #4fc1ff) や落ち着いた色調\n` +
+            `- ボーダー・区切り: 暗めのグレー (例: #3c3c3c, または Tailwind の neutral-700/800)`
+          : `- 背景: ライト系 (例: #ffffff, #f3f3f3, または Tailwind の white/neutral-50/100)\n` +
+            `- テキスト: 暗い系 (例: #1e1e1e, #333333, または Tailwind の neutral-800/900)\n` +
+            `- アクセント: VSCode ブルー (#007acc) や鮮明な色調\n` +
+            `- ボーダー・区切り: ライトグレー (例: #e0e0e0, または Tailwind の neutral-200/300)`)
+    );
+  }
 
   const shellInstructions =
     platform === "win32"

@@ -162,7 +162,7 @@ export abstract class VercelBaseProvider extends BaseProvider {
         system: resolvedSystem,
         messages: currentMessages,
         ...(vercelToolDefs && onToolCall ? { tools: vercelToolDefs } : {}),
-        maxOutputTokens: 8192,
+        maxOutputTokens: 16384,
         abortSignal: signal,
       });
 

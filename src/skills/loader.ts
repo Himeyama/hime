@@ -164,6 +164,10 @@ $ARGUMENTS
 ## 技術制約 (厳守)
 - **出力形式**: 必ず **1つの html コードブロック** のみで出力すること
 - **構成**: CSS・JavaScript をすべて HTML ファイル内に埋め込み、ファイル単体で動作すること
+- **確実に動作することを優先する**
+- 冗長とならないようにする
+- JavaScript の関数はアロー関数を用いる
+- {{colorThemeInstruction}}
 - **スタイリング**: Tailwind CSS は CDN 経由で読み込むこと
   \`\`\`html
   <script src="https://cdn.tailwindcss.com"></script>
@@ -330,6 +334,7 @@ export function expandSkillPrompt(
     arguments?: string;
     selection?: string;
     activeFile?: string;
+    vscodeTheme?: "dark" | "light";
   }
 ): string {
   let result = prompt;
@@ -342,6 +347,15 @@ export function expandSkillPrompt(
 
   // {{activeFile}}
   result = result.replace(/\{\{activeFile\}\}/g, variables.activeFile || "(ファイルなし)");
+
+  // {{colorThemeInstruction}}
+  const colorThemeInstruction =
+    variables.vscodeTheme === "dark"
+      ? "カラーテーマ: ダーク系を使用する (背景: #1e1e1e / #252526、テキスト: #d4d4d4 / #cccccc、アクセント: #007acc / #4fc1ff、ボーダー: #3c3c3c) — 要件に明示がない場合はこれに従うこと"
+      : variables.vscodeTheme === "light"
+        ? "カラーテーマ: ライト系を使用する (背景: #ffffff / #f3f3f3、テキスト: #1e1e1e / #333333、アクセント: #007acc、ボーダー: #e0e0e0) — 要件に明示がない場合はこれに従うこと"
+        : "要件の項目で指定がない場合は、赤テーマを使用する";
+  result = result.replace(/\{\{colorThemeInstruction\}\}/g, colorThemeInstruction);
 
   return result.trim();
 }

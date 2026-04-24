@@ -351,12 +351,19 @@ class HimeChatViewProvider implements vscode.WebviewViewProvider {
       this.sendToWebview({ type: "projectContextLoaded", files: loadedFiles });
     }
 
+    const themeKind = vscode.window.activeColorTheme.kind;
+    const vscodeTheme: "dark" | "light" =
+      themeKind === vscode.ColorThemeKind.Dark || themeKind === vscode.ColorThemeKind.HighContrast
+        ? "dark"
+        : "light";
+
     const systemPrompt = buildSystemPromptParts({
       workspacePath,
       model: entry.model,
       activeFilePath,
       projectContext,
       userSystemPrompt: settings.systemPrompt,
+      vscodeTheme,
     });
 
     const apiKey = await this.context.secrets.get(`hime.apiKey.${entry.provider}`);
@@ -514,10 +521,17 @@ class HimeChatViewProvider implements vscode.WebviewViewProvider {
     const selection = editor ? editor.document.getText(editor.selection) : "";
     const activeFilePath = activeEditorTracker.getContext()?.filePath || "";
 
+    const themeKind = vscode.window.activeColorTheme.kind;
+    const vscodeTheme: "dark" | "light" =
+      themeKind === vscode.ColorThemeKind.Dark || themeKind === vscode.ColorThemeKind.HighContrast
+        ? "dark"
+        : "light";
+
     const expandedPrompt = expandSkillPrompt(skill.prompt, {
       arguments: args,
       selection: selection || undefined,
       activeFile: activeFilePath || undefined,
+      vscodeTheme,
     });
 
     this.sendToWebview({ type: "skillExecuted", chatId, skillName, expandedPrompt });
@@ -689,7 +703,7 @@ class HimeChatViewProvider implements vscode.WebviewViewProvider {
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <meta http-equiv="Content-Security-Policy" content="default-src 'none'; style-src ${webview.cspSource} 'unsafe-inline'; script-src 'nonce-${nonce}' 'unsafe-eval'; img-src ${webview.cspSource} data: blob:; connect-src *;">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'none'; style-src ${webview.cspSource} 'unsafe-inline' https:; script-src 'nonce-${nonce}' 'unsafe-eval' https:; img-src ${webview.cspSource} data: blob: https:; font-src https: data:; connect-src *;">
   <link rel="stylesheet" href="${styleUri}">
   <title>Hime</title>
 </head>

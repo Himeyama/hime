@@ -157,7 +157,7 @@ export function CodeBlock({ language, code }: CodeBlockProps) {
       ) : isHTML && showPreview ? (
         <iframe
           srcDoc={code}
-          sandbox="allow-scripts allow-same-origin"
+          sandbox="allow-scripts allow-forms allow-modals allow-popups"
           className="w-full border-0 block"
           style={{ height: "500px" }}
           title="HTML Preview"
