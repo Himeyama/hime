@@ -1,74 +1,14 @@
-import { useState, useEffect, useMemo, useRef } from "react";
-import React from "react";
+import { useState, useEffect, useRef } from "react";
 import { Check, Copy, Play, Code as CodeIcon } from "lucide-react";
-import * as Lucide from "lucide-react";
 import hljs from "highlight.js";
 import mermaid from "mermaid";
-import { LiveProvider, LivePreview, LiveError } from "react-live";
 import { Button } from "./ui/button";
-import { Input } from "./ui/input";
-import { Label } from "./ui/label";
-import { Switch } from "./ui/switch";
-import { Badge } from "./ui/badge";
-import { Separator } from "./ui/separator";
-import { Select, SelectContent, SelectGroup, SelectItem, SelectLabel, SelectSeparator, SelectTrigger, SelectValue } from "./ui/select";
-import { Textarea } from "./ui/textarea";
-import { Card, CardHeader, CardFooter, CardTitle, CardDescription, CardContent } from "./ui/card";
-import { Tooltip, TooltipTrigger, TooltipContent, TooltipProvider } from "./ui/tooltip";
-import { Table, TableHeader, TableBody, TableFooter, TableHead, TableRow, TableCell, TableCaption } from "./ui/table";
-import { cn } from "../lib/utils";
-
-// Scope for JSX preview
-const PREVIEW_SCOPE = {
-  React,
-  useState,
-  useEffect,
-  useMemo,
-  useRef,
-  ...Lucide,
-  cn,
-  Button,
-  Input,
-  Label,
-  Switch,
-  Badge,
-  Separator,
-  Select,
-  SelectContent,
-  SelectGroup,
-  SelectItem,
-  SelectLabel,
-  SelectSeparator,
-  SelectTrigger,
-  SelectValue,
-  Textarea,
-  Card,
-  CardHeader,
-  CardFooter,
-  CardTitle,
-  CardDescription,
-  CardContent,
-  Tooltip,
-  TooltipTrigger,
-  TooltipContent,
-  TooltipProvider,
-  Table,
-  TableHeader,
-  TableBody,
-  TableFooter,
-  TableHead,
-  TableRow,
-  TableCell,
-  TableCaption,
-};
 
 interface CodeBlockProps {
   language: string;
   code: string;
 }
 
-// Mermaid component to handle diagram rendering
-// ... (Mermaid component remains unchanged)
 function Mermaid({ code }: { code: string }) {
   const ref = useRef<HTMLDivElement>(null);
   const [svg, setSvg] = useState("");
@@ -76,11 +16,10 @@ function Mermaid({ code }: { code: string }) {
 
   useEffect(() => {
     let isMounted = true;
-    
-    // Detect VSCode theme
-    const isDark = document.body.classList.contains("vscode-dark") || 
+
+    const isDark = document.body.classList.contains("vscode-dark") ||
                    document.body.classList.contains("vscode-high-contrast");
-    
+
     mermaid.initialize({
       startOnLoad: false,
       theme: isDark ? "dark" : "default",
@@ -92,34 +31,23 @@ function Mermaid({ code }: { code: string }) {
       if (!ref.current) return;
       const id = `mermaid-${Math.random().toString(36).substr(2, 9)}`;
       try {
-        // Clear previous content
         const { svg } = await mermaid.render(id, code);
-        
         if (isMounted) {
           setSvg(svg);
           setError(null);
         }
       } catch (err: any) {
-        // Mermaid might inject error elements into the document.body when it fails.
-        // We try to clean up the specific element mermaid might have created.
-        const errorElement = document.getElementById("d" + id); 
-        if (errorElement) {
-          errorElement.remove();
-        }
-
+        const errorElement = document.getElementById("d" + id);
+        if (errorElement) errorElement.remove();
         console.error("Mermaid rendering failed:", err);
         if (isMounted) {
-          // Provide a clean error message instead of the bomb UI
           setError("Mermaid diagram rendering failed. Please check your syntax.");
         }
       }
     };
 
     renderMermaid();
-    
-    return () => {
-      isMounted = false;
-    };
+    return () => { isMounted = false; };
   }, [code]);
 
   if (error) {
@@ -135,10 +63,10 @@ function Mermaid({ code }: { code: string }) {
   }
 
   return (
-    <div 
-      ref={ref} 
+    <div
+      ref={ref}
       className="flex justify-center p-4 bg-background/50 rounded-md overflow-x-auto shadow-inner"
-      dangerouslySetInnerHTML={{ __html: svg }} 
+      dangerouslySetInnerHTML={{ __html: svg }}
     />
   );
 }
@@ -148,10 +76,10 @@ export function CodeBlock({ language, code }: CodeBlockProps) {
   const [showPreview, setShowPreview] = useState(false);
   const codeRef = useRef<HTMLElement>(null);
   const isMermaid = language?.toLowerCase() === "mermaid";
-  const isJSX = language?.toLowerCase() === "jsx" || language?.toLowerCase() === "tsx" || (language?.toLowerCase() === "react" && code.includes("<"));
+  const isHTML = language?.toLowerCase() === "html";
 
   useEffect(() => {
-    if (!codeRef.current || isMermaid || (isJSX && showPreview)) return;
+    if (!codeRef.current || isMermaid || (isHTML && showPreview)) return;
 
     codeRef.current.removeAttribute("data-highlighted");
     codeRef.current.textContent = code;
@@ -167,7 +95,7 @@ export function CodeBlock({ language, code }: CodeBlockProps) {
         // Leave as plain text
       }
     }
-  }, [code, language, isMermaid, isJSX, showPreview]);
+  }, [code, language, isMermaid, isHTML, showPreview]);
 
   const handleCopy = async () => {
     await navigator.clipboard.writeText(code);
@@ -182,7 +110,7 @@ export function CodeBlock({ language, code }: CodeBlockProps) {
           <span className="text-muted-foreground font-medium uppercase tracking-wider text-[10px]">
             {language || "text"}
           </span>
-          {isJSX && (
+          {isHTML && (
             <div className="flex items-center bg-background/50 rounded-md p-0.5 border border-border/50 ml-2">
               <Button
                 variant={showPreview ? "ghost" : "secondary"}
@@ -217,52 +145,23 @@ export function CodeBlock({ language, code }: CodeBlockProps) {
               コピー済み
             </>
           ) : (
-            <>
-              <Copy className="h-3 w-3" />
-            </>
+            <Copy className="h-3 w-3" />
           )}
         </Button>
       </div>
-      
+
       {isMermaid ? (
         <div className="p-3 bg-transparent">
           <Mermaid code={code} />
         </div>
-      ) : isJSX && showPreview ? (
-        <div className="p-4 bg-background min-h-[100px] overflow-auto">
-          {(() => {
-            // Clean code for preview: strip imports, exports, and basic TS types
-            let previewCode = code
-              .replace(/^import\s+[\s\S]*?from\s+['"].*?['"]\r?\n?/gm, "")
-              .replace(/^import\s+(['"].*?['"]|.*?\r?\n)/gm, "")
-              .replace(/^export\s+(default\s+)?/gm, "")
-              .replace(/:\s*(?:React\.FC|JSX\.Element|string|number|boolean|any|void)\b/g, "")
-              .trim();
-            
-            const hasRender = previewCode.includes("render(");
-            const hasDeclaration = /^(const|let|var|function|class)\s+/m.test(previewCode);
-            const noInline = hasRender || hasDeclaration;
-
-            // Automatically append render() if missing but a component is defined
-            if (noInline && !hasRender) {
-              const componentMatch = previewCode.match(/^(?:const|function)\s+([A-Z][A-Za-z0-9_]*)/m);
-              if (componentMatch) {
-                previewCode += `\n\nrender(<${componentMatch[1]} />);`;
-              }
-            }
-
-            return (
-              <LiveProvider code={previewCode} scope={PREVIEW_SCOPE} noInline={noInline}>
-                <div className="rounded-md border border-border/50 p-4 bg-vsc-editor-bg shadow-inner mb-2">
-                  <TooltipProvider>
-                    <LivePreview />
-                  </TooltipProvider>
-                </div>
-                <LiveError className="text-[10px] font-mono text-destructive bg-destructive/5 p-2 rounded mt-2 whitespace-pre-wrap border border-destructive/20" />
-              </LiveProvider>
-            );
-          })()}
-        </div>
+      ) : isHTML && showPreview ? (
+        <iframe
+          srcDoc={code}
+          sandbox="allow-scripts allow-same-origin"
+          className="w-full border-0 block"
+          style={{ height: "500px" }}
+          title="HTML Preview"
+        />
       ) : (
         <pre className="px-3 py-3 overflow-x-auto font-vsc-editor text-[13px] leading-snug m-0 scrollbar-thin bg-transparent">
           <code

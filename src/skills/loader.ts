@@ -154,47 +154,45 @@ $ARGUMENTS
   },
   {
     name: "app",
-    description: "React (TSX) による高品質アプリ生成スキル",
+    description: "HTML 高品質アプリ生成スキル",
     source: "builtin",
-    prompt: `以下の要件に基づき、製品品質のデザインでアプリケーションを TSX で作成してください。
+    prompt: `以下の要件に基づき、製品品質のデザインのアプリケーションを **単一の HTML ファイル** として作成してください。
 
 ## 要件
 $ARGUMENTS
 
 ## 技術制約 (厳守)
-- **出力形式**: 必ず **1つの tsx コードブロック** のみで出力すること
-- **スタイリング**: すべてのスタイルを TSX 内に完結させてください。プロジェクトで利用可能な **Tailwind CSS** を優先的に使用すること
-- **構成**: 単一のファイルとして動作する React コンポーネントとして実装すること
+- **出力形式**: 必ず **1つの html コードブロック** のみで出力すること
+- **構成**: CSS・JavaScript をすべて HTML ファイル内に埋め込み、ファイル単体で動作すること
+- **スタイリング**: Tailwind CSS は CDN 経由で読み込むこと
+  \`\`\`html
+  <script src="https://cdn.tailwindcss.com"></script>
+  \`\`\`
+- **フォント**: Noto Sans JP を Google Fonts CDN で読み込むこと
+  \`\`\`html
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;700&display=swap" rel="stylesheet">
+  \`\`\`
+- **外部ライブラリ**: 必要に応じて CDN 経由で追加可 (Alpine.js, Chart.js, etc.)
 
-## 利用可能なライブラリ・コンポーネント
-以下のものは、プレビュー環境で既にインポートされており、**インポート文なしで直接使用可能**
+## デザイン指針
+**AI 特有の「ありきたりな」デザインを避け**、製品品質のインターフェースを構築すること
 
-- **React Hooks**: \`useState\`, \`useEffect\`, \`useRef\`
-- **UI コンポーネント (shadcn/ui ベース)**:
-  - \`Button\`, \`Input\`, \`Label\`, \`Switch\`, \`Badge\`, \`Separator\`, \`Textarea\`
-  - \`Select\`, \`SelectTrigger\`, \`SelectValue\`, \`SelectContent\`, \`SelectGroup\`, \`SelectItem\`, \`SelectLabel\`, \`SelectSeparator\`
-- **アイコン (\`lucide-react\` )**:
-  - すべての Lucide アイコンが利用可能 (例: \`<Search />\`, \`<User />\`, \`<ChevronRight />\` 等)
-  - \`import\` 文は書かないこと
+### レスポンシブ対応
+- \`<meta name="viewport" content="width=device-width, initial-scale=1">\` を必ず含めること
+- モバイル (スマートフォン) とデスクトップの両方で快適に使えるレイアウト
+- Tailwind のブレークポイント (\`sm:\`, \`md:\`, \`lg:\`) を活用すること
+- タッチ操作を考慮したボタンサイズ・余白 (最小タップ領域 44px 以上)
 
-## デザイン指針 (frontend-design)
-**AI 特有の「ありきたりな」デザインを避け**、製品品質のインターフェースを構築する
-
-### 1. デザイン思考
-UI/UX を意識し、誰でも見やすく、美しく、操作しやすいデザインとすること。
-
-### 2. 美学的ガイドライン
-- 基本的に Radix UI を使用すること
-- スマートフォン等のマルチデバイス対応、UX を意識した配置とする
-- 日本語フォントは Noto Sans JP を使用すること
+### 美学的ガイドライン
+- 見やすく・美しく・操作しやすいデザインを追求すること
 - 安易なグラデーションは使用しない
-- 文脈に応じた真のデザインを追求する
+- 余白・タイポグラフィ・カラーパレットに一貫性を持たせること
+- アイコンが必要な場合は SVG インラインまたは絵文字を使用すること
 
-### 3. コーディング規約
-- TSX で記載すること
-- CSS は埋め込むこと
-- コードブロックを一つのみ出力し、一つのコードでアプリが完結されていること
-- アプリの説明、一つのコードブロックの順に生成すること`,
+### コーディング規約
+- \`<style>\` タグでカスタム CSS を補足してもよいが、Tailwind クラスを優先すること
+- \`<script>\` タグはファイル末尾 (\`</body>\` 直前) に配置すること
+- アプリの説明を簡潔に述べた後、html コードブロックを1つだけ出力すること`,
   },
 ];
 
