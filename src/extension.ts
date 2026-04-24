@@ -696,30 +696,20 @@ class HimeChatViewProvider implements vscode.WebviewViewProvider {
     const styleUri = webview.asWebviewUri(
       vscode.Uri.joinPath(this.context.extensionUri, "dist", "webview.css")
     );
-    const nonce = getNonce();
 
     return `<!DOCTYPE html>
 <html lang="ja">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <meta http-equiv="Content-Security-Policy" content="default-src 'none'; style-src ${webview.cspSource} 'unsafe-inline' https:; script-src 'nonce-${nonce}' 'unsafe-eval' https:; img-src ${webview.cspSource} data: blob: https:; font-src https: data:; connect-src *;">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'none'; style-src ${webview.cspSource} 'unsafe-inline' https:; script-src ${webview.cspSource} 'unsafe-inline' 'unsafe-eval' https:; img-src ${webview.cspSource} data: blob: https:; font-src https: data:; connect-src *; frame-src blob: data:;">
   <link rel="stylesheet" href="${styleUri}">
   <title>Hime</title>
 </head>
 <body>
   <div id="root"></div>
-  <script nonce="${nonce}" src="${scriptUri}"></script>
+  <script src="${scriptUri}"></script>
 </body>
 </html>`;
   }
-}
-
-function getNonce(): string {
-  let text = "";
-  const possible = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
-  for (let i = 0; i < 32; i++) {
-    text += possible.charAt(Math.floor(Math.random() * possible.length));
-  }
-  return text;
 }

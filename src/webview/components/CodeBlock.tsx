@@ -71,6 +71,19 @@ function Mermaid({ code }: { code: string }) {
   );
 }
 
+// sandbox="allow-scripts" without allow-same-origin makes localStorage/sessionStorage
+// throw SecurityError, crashing the entire script before event listeners attach.
+// Inject an in-memory polyfill that silently catches the error.
+const STORAGE_POLYFILL = `<script>(function(){function m(){var s={};return{getItem:function(k){return Object.prototype.hasOwnProperty.call(s,k)?s[k]:null},setItem:function(k,v){s[k]=String(v)},removeItem:function(k){delete s[k]},clear:function(){s={}},key:function(i){return Object.keys(s)[i]||null},get length(){return Object.keys(s).length}}};try{localStorage.getItem('')}catch(e){Object.defineProperty(window,'localStorage',{value:m(),configurable:true})};try{sessionStorage.getItem('')}catch(e){Object.defineProperty(window,'sessionStorage',{value:m(),configurable:true})}})();<\/script>`;
+
+function injectStoragePolyfill(html: string): string {
+  const idx = html.indexOf("</head>");
+  if (idx !== -1) return html.slice(0, idx) + STORAGE_POLYFILL + html.slice(idx);
+  const bodyIdx = html.indexOf("<body");
+  if (bodyIdx !== -1) return html.slice(0, bodyIdx) + STORAGE_POLYFILL + html.slice(bodyIdx);
+  return STORAGE_POLYFILL + html;
+}
+
 export function CodeBlock({ language, code }: CodeBlockProps) {
   const [copied, setCopied] = useState(false);
   const [showPreview, setShowPreview] = useState(false);
@@ -156,7 +169,7 @@ export function CodeBlock({ language, code }: CodeBlockProps) {
         </div>
       ) : isHTML && showPreview ? (
         <iframe
-          srcDoc={code}
+          srcDoc={injectStoragePolyfill(code)}
           sandbox="allow-scripts allow-forms allow-modals allow-popups"
           className="w-full border-0 block"
           style={{ height: "500px" }}
