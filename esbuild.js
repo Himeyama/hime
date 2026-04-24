@@ -9,6 +9,17 @@ const isWatch = process.argv.includes("--watch");
 const isProduction = process.argv.includes("--production");
 const isWebview = process.argv.includes("--webview");
 
+/** highlight.js CSS を文字列として返すプラグイン（postcssPlugin より前に登録する） */
+const hljsTextPlugin = {
+  name: "hljs-text",
+  setup(build) {
+    build.onLoad({ filter: /highlight\.js[/\\]styles[/\\].*\.css$/ }, async (args) => {
+      const css = await fs.promises.readFile(args.path, "utf8");
+      return { contents: `export default ${JSON.stringify(css)}`, loader: "js" };
+    });
+  },
+};
+
 /** PostCSS + Tailwind CSS plugin for esbuild */
 const postcssPlugin = {
   name: "postcss",
@@ -47,7 +58,7 @@ const webviewConfig = {
   target: "es2022",
   sourcemap: !isProduction,
   minify: isProduction,
-  plugins: [postcssPlugin],
+  plugins: [hljsTextPlugin, postcssPlugin],
   define: {
     "process.env.NODE_ENV": isProduction ? '"production"' : '"development"',
     global: "window",

@@ -8,7 +8,8 @@ import { useChat } from "./hooks/useChat";
 import { useSettings } from "./hooks/useSettings";
 import { useVSCode } from "./hooks/useVSCode";
 import { cn } from "./lib/utils";
-import "highlight.js/styles/vs.css";
+import hljsLight from "highlight.js/styles/vs.css";
+import hljsDark from "highlight.js/styles/vs2015.css";
 import "./styles/index.css";
 
 export function App() {
@@ -17,6 +18,29 @@ export function App() {
   const { postMessage } = useVSCode();
   const [showSettings, setShowSettings] = useState(false);
   const [selectedModelId, setSelectedModelId] = useState<string>("");
+
+  useEffect(() => {
+    const styleEl = document.createElement("style");
+    styleEl.id = "hljs-theme";
+    document.head.appendChild(styleEl);
+
+    const updateTheme = () => {
+      const dark =
+        document.body.classList.contains("vscode-dark") ||
+        document.body.classList.contains("vscode-high-contrast");
+      styleEl.textContent = dark ? hljsDark : hljsLight;
+    };
+
+    updateTheme();
+
+    const observer = new MutationObserver(updateTheme);
+    observer.observe(document.body, { attributes: true, attributeFilter: ["class"] });
+
+    return () => {
+      observer.disconnect();
+      styleEl.remove();
+    };
+  }, []);
 
   useEffect(() => {
     if (settingsHook.settings?.defaultModelId) {
