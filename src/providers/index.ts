@@ -3,6 +3,7 @@ import { AIProvider, ProviderConfig } from "../types/provider";
 import { AnthropicProvider } from "./anthropic";
 import { OpenAIProvider } from "./openai";
 import { AzureOpenAIProvider } from "./azure-openai";
+import { AzureOpenAICustomProvider } from "./azure-openai-custom";
 import { OllamaProvider } from "./ollama";
 import { OpenRouterProvider } from "./openrouter";
 import { GoogleProvider } from "./google";
@@ -16,6 +17,8 @@ export function createProvider(config: ProviderConfig): AIProvider {
       return new OpenAIProvider(config);
     case "azure-openai":
       return new AzureOpenAIProvider(config);
+    case "azure-openai-custom":
+      return new AzureOpenAICustomProvider(config);
     case "ollama":
       return new OllamaProvider(config);
     case "openrouter":
@@ -31,6 +34,7 @@ export {
   AnthropicProvider,
   OpenAIProvider,
   AzureOpenAIProvider,
+  AzureOpenAICustomProvider,
   OllamaProvider,
   OpenRouterProvider,
   GoogleProvider,

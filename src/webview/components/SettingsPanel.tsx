@@ -29,6 +29,7 @@ const PROVIDER_OPTIONS: { value: ProviderType; label: string }[] = [
   { value: "anthropic", label: PROVIDER_DISPLAY_NAMES.anthropic },
   { value: "openai", label: PROVIDER_DISPLAY_NAMES.openai },
   { value: "azure-openai", label: PROVIDER_DISPLAY_NAMES["azure-openai"] },
+  { value: "azure-openai-custom", label: PROVIDER_DISPLAY_NAMES["azure-openai-custom"] },
   { value: "ollama", label: PROVIDER_DISPLAY_NAMES.ollama },
   { value: "openrouter", label: PROVIDER_DISPLAY_NAMES.openrouter },
   { value: "google", label: PROVIDER_DISPLAY_NAMES.google },
@@ -61,7 +62,7 @@ export function SettingsPanel({
 
   if (!settings) return null;
 
-  const needsEndpoint = newProvider === "azure-openai" || newProvider === "ollama" || newProvider === "custom";
+  const needsEndpoint = newProvider === "azure-openai" || newProvider === "azure-openai-custom" || newProvider === "ollama" || newProvider === "custom";
   const isOllama = newProvider === "ollama";
 
   const handleSaveModel = () => {
@@ -71,7 +72,7 @@ export function SettingsPanel({
         provider: newProvider,
         model: newModel.trim(),
         endpoint: needsEndpoint ? (newEndpoint.trim() || undefined) : undefined,
-        deploymentName: newProvider === "azure-openai" ? (newDeploymentName.trim() || undefined) : undefined,
+        deploymentName: (newProvider === "azure-openai") ? (newDeploymentName.trim() || undefined) : undefined,
       },
       !isOllama && newApiKey.trim() ? newApiKey.trim() : undefined
     );
@@ -166,8 +167,8 @@ export function SettingsPanel({
           </div>
         )}
 
-        {/* Row 2 (Ollama / Custom): エンドポイント */}
-        {(newProvider === "ollama" || newProvider === "custom") && (
+        {/* Row 2 (Azure Custom / Ollama / Custom): エンドポイント */}
+        {(newProvider === "azure-openai-custom" || newProvider === "ollama" || newProvider === "custom") && (
           <Input
             placeholder={newProvider === "ollama" ? "http://localhost:11434" : "エンドポイント URL"}
             value={newEndpoint}

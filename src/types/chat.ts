@@ -69,6 +69,7 @@ export type ProviderType =
   | "anthropic"
   | "openai"
   | "azure-openai"
+  | "azure-openai-custom"
   | "ollama"
   | "openrouter"
   | "google"
@@ -87,6 +88,7 @@ export const PROVIDER_DISPLAY_NAMES: Record<ProviderType, string> = {
   anthropic: "Anthropic",
   openai: "OpenAI",
   "azure-openai": "Azure OpenAI",
+  "azure-openai-custom": "Azure OpenAI (Custom)",
   ollama: "Ollama",
   openrouter: "OpenRouter",
   google: "Google Gemini",

@@ -666,6 +666,7 @@ class HimeChatViewProvider implements vscode.WebviewViewProvider {
       anthropic: !!(await this.context.secrets.get("hime.apiKey.anthropic")),
       openai: !!(await this.context.secrets.get("hime.apiKey.openai")),
       "azure-openai": !!(await this.context.secrets.get("hime.apiKey.azure-openai")),
+      "azure-openai-custom": !!(await this.context.secrets.get("hime.apiKey.azure-openai-custom")),
       ollama: true,
       openrouter: !!(await this.context.secrets.get("hime.apiKey.openrouter")),
       google: !!(await this.context.secrets.get("hime.apiKey.google")),

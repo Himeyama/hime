@@ -10,6 +10,7 @@ export function useSettings() {
     anthropic: false,
     openai: false,
     "azure-openai": false,
+    "azure-openai-custom": false,
     ollama: true,
     openrouter: false,
     google: false,
