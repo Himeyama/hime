@@ -28,7 +28,7 @@ describe('SettingsStorage', () => {
     expect(fs.mkdir).toHaveBeenCalledWith(mockBaseDir, { recursive: true });
     expect(fs.writeFile).toHaveBeenCalledWith(
       mockSettingsFile,
-      expect.stringContaining('"defaultProvider": "anthropic"'),
+      expect.stringContaining('"defaultModelId"'),
       'utf-8'
     );
   });
