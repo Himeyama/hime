@@ -14,6 +14,7 @@ export function useSettings() {
     ollama: true,
     openrouter: false,
     google: false,
+    xai: false,
     custom: false,
   });
   const [connectionTestResult, setConnectionTestResult] = useState<{

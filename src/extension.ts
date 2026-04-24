@@ -684,6 +684,7 @@ class HimeChatViewProvider implements vscode.WebviewViewProvider {
       ollama: true,
       openrouter: !!(await this.context.secrets.get("hime.apiKey.openrouter")),
       google: !!(await this.context.secrets.get("hime.apiKey.google")),
+      xai: !!(await this.context.secrets.get("hime.apiKey.xai")),
       custom: !!(await this.context.secrets.get("hime.apiKey.custom")),
     };
     this.sendToWebview({ type: "settings", settings, hasApiKeys });

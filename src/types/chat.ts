@@ -73,6 +73,7 @@ export type ProviderType =
   | "ollama"
   | "openrouter"
   | "google"
+  | "xai"
   | "custom";
 
 export interface ModelEntry {
@@ -92,6 +93,7 @@ export const PROVIDER_DISPLAY_NAMES: Record<ProviderType, string> = {
   ollama: "Ollama",
   openrouter: "OpenRouter",
   google: "Google Gemini",
+  xai: "xAI (Grok)",
   custom: "Custom",
 };
 

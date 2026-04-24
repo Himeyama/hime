@@ -7,6 +7,7 @@ import { AzureOpenAICustomProvider } from "./azure-openai-custom";
 import { OllamaProvider } from "./ollama";
 import { OpenRouterProvider } from "./openrouter";
 import { GoogleProvider } from "./google";
+import { XAIProvider } from "./xai";
 import { CustomProvider } from "./custom";
 
 export function createProvider(config: ProviderConfig): AIProvider {
@@ -25,6 +26,8 @@ export function createProvider(config: ProviderConfig): AIProvider {
       return new OpenRouterProvider(config);
     case "google":
       return new GoogleProvider(config);
+    case "xai":
+      return new XAIProvider(config);
     case "custom":
       return new CustomProvider(config);
   }
@@ -38,5 +41,6 @@ export {
   OllamaProvider,
   OpenRouterProvider,
   GoogleProvider,
+  XAIProvider,
   CustomProvider,
 };

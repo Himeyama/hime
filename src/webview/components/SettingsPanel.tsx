@@ -33,6 +33,7 @@ const PROVIDER_OPTIONS: { value: ProviderType; label: string }[] = [
   { value: "ollama", label: PROVIDER_DISPLAY_NAMES.ollama },
   { value: "openrouter", label: PROVIDER_DISPLAY_NAMES.openrouter },
   { value: "google", label: PROVIDER_DISPLAY_NAMES.google },
+  { value: "xai", label: PROVIDER_DISPLAY_NAMES.xai },
   { value: "custom", label: PROVIDER_DISPLAY_NAMES.custom },
 ];
 
