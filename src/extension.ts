@@ -2,6 +2,11 @@ import * as vscode from "vscode";
 import * as crypto from "crypto";
 import * as path from "path";
 import * as os from "os";
+import * as dns from "dns";
+
+// Fix for Node.js 18+ native fetch timeouts when IPv6 routing is broken
+dns.setDefaultResultOrder("ipv4first");
+
 import { ChatHistoryStorage } from "./storage/chat-history";
 import { SettingsStorage } from "./storage/settings";
 import { MCPClientManager } from "./mcp/client";
