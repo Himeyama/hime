@@ -195,13 +195,20 @@ export abstract class VercelBaseProvider extends BaseProvider {
           const res = await onToolCall(toolCall);
           toolCall.status = "completed";
           toolCall.result = res;
-          toolResultParts.push({ type: "tool-result", toolCallId: toolCall.id, toolName: toolCall.name, output: res });
+          toolResultParts.push({
+            type: "tool-result",
+            toolCallId: toolCall.id,
+            toolName: toolCall.name,
+            output: { type: "text" as const, value: typeof res === "string" ? res : JSON.stringify(res) },
+          });
         } catch (err: any) {
           toolCall.status = "error";
           toolCall.error = err.message || String(err);
           toolResultParts.push({
-            type: "tool-result", toolCallId: toolCall.id, toolName: toolCall.name,
-            output: `Error: ${toolCall.error}`, isError: true,
+            type: "tool-result",
+            toolCallId: toolCall.id,
+            toolName: toolCall.name,
+            output: { type: "error-text" as const, value: `Error: ${toolCall.error}` },
           });
         }
       }
