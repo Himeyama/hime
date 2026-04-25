@@ -22,25 +22,28 @@ export async function readWorkspaceFile(fileName: string): Promise<string | null
 export async function loadProjectContext(): Promise<{
   claudeMd?: string;
   agentsMd?: string;
+  geminiMd?: string;
   readmeMd?: string;
 }> {
-  const [claudeMd, agentsMd, readmeMd] = await Promise.all([
-    readWorkspaceFile("CLAUDE.md"),
+  const [agentsMd, claudeMd, geminiMd, readmeMd] = await Promise.all([
     readWorkspaceFile("AGENTS.md"),
+    readWorkspaceFile("CLAUDE.md"),
+    readWorkspaceFile("GEMINI.md"),
     readWorkspaceFile("README.md"),
   ]);
 
-  const result: { claudeMd?: string; agentsMd?: string; readmeMd?: string } = {};
-
-  if (claudeMd !== null) {
-    result.claudeMd = claudeMd;
-  }
   if (agentsMd !== null) {
-    result.agentsMd = agentsMd;
+    return { agentsMd };
+  }
+  if (claudeMd !== null) {
+    return { claudeMd };
+  }
+  if (geminiMd !== null) {
+    return { geminiMd };
   }
   if (readmeMd !== null) {
-    result.readmeMd = readmeMd;
+    return { readmeMd };
   }
 
-  return result;
+  return {};
 }

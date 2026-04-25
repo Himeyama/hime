@@ -336,7 +336,7 @@ export function SettingsPanel({
             onCheckedChange={(checked) => onUpdateSettings({ autoLoadProjectFiles: checked })}
           />
           <Label htmlFor="auto-load-files" className="cursor-pointer">
-            CLAUDE.md / AGENTS.md / README.md を自動読み込み
+            プロジェクトの指示書 (AGENTS.md等) を自動読み込み
           </Label>
         </div>
 

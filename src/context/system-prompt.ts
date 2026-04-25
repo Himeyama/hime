@@ -4,7 +4,7 @@ type Params = {
   workspacePath: string;
   model?: string;
   activeFilePath?: string | null;
-  projectContext: { claudeMd?: string; agentsMd?: string; readmeMd?: string };
+  projectContext: { claudeMd?: string; agentsMd?: string; geminiMd?: string; readmeMd?: string };
   userSystemPrompt?: string;
 };
 
@@ -106,13 +106,13 @@ export function buildSystemPromptParts(params: Params): { staticPart: string; dy
   }
 
   // Project context files
-  if (projectContext.claudeMd) {
-    dynamicSections.push(`## CLAUDE.md\n${projectContext.claudeMd}`);
-  }
   if (projectContext.agentsMd) {
     dynamicSections.push(`## AGENTS.md\n${projectContext.agentsMd}`);
-  }
-  if (projectContext.readmeMd) {
+  } else if (projectContext.claudeMd) {
+    dynamicSections.push(`## CLAUDE.md\n${projectContext.claudeMd}`);
+  } else if (projectContext.geminiMd) {
+    dynamicSections.push(`## GEMINI.md\n${projectContext.geminiMd}`);
+  } else if (projectContext.readmeMd) {
     dynamicSections.push(`## README.md\n${projectContext.readmeMd}`);
   }
 
