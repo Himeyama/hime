@@ -2,10 +2,26 @@ import * as vscode from "vscode";
 import * as crypto from "crypto";
 import * as path from "path";
 import * as os from "os";
-import * as dns from "dns";
 
-// Fix for Node.js 18+ native fetch timeouts when IPv6 routing is broken
-dns.setDefaultResultOrder("ipv4first");
+// Fix for Node.js 18+ native fetch timeouts when IPv6 routing is broken (blackholing).
+// Monkey-patch dns.lookup to force IPv4 for specific known domains that frequently suffer from this issue.
+// This is necessary because undici's autoSelectFamily is sometimes buggy or the OS takes 10s to fail AAAA.
+const _dns = require("dns");
+const originalLookup = _dns.lookup;
+_dns.lookup = function (hostname: string, options: any, callback: any) {
+  if (typeof options === "function") {
+    callback = options;
+    options = {};
+  } else if (typeof options === "number") {
+    options = { family: options };
+  } else if (!options) {
+    options = {};
+  }
+  if (hostname && (hostname.includes("openai.com") || hostname.includes("anthropic.com"))) {
+    options.family = 4;
+  }
+  return originalLookup(hostname, options, callback);
+};
 
 import { ChatHistoryStorage } from "./storage/chat-history";
 import { SettingsStorage } from "./storage/settings";
