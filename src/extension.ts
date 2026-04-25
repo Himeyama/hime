@@ -495,6 +495,12 @@ class HimeChatViewProvider implements vscode.WebviewViewProvider {
       });
     } catch (err: any) {
       if (err.name === "AbortError") return;
+      console.error("Provider chat error:", err);
+      outputChannel.appendLine(`[${new Date().toISOString()}] ERROR: provider.chat failed`);
+      outputChannel.appendLine(`Message: ${err.message || String(err)}`);
+      if (err.stack) outputChannel.appendLine(`Stack:\n${err.stack}`);
+      if (err.cause) outputChannel.appendLine(`Cause: ${JSON.stringify(err.cause, null, 2)}`);
+      
       this.sendToWebview({ type: "error", chatId, error: err.message || String(err) });
     } finally {
       currentAbortController = null;
