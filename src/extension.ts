@@ -344,8 +344,9 @@ class HimeChatViewProvider implements vscode.WebviewViewProvider {
     const activeFilePath = activeEditorTracker.getContext()?.filePath;
 
     const loadedFiles: string[] = [];
-    if (projectContext.claudeMd) loadedFiles.push("CLAUDE.md");
     if (projectContext.agentsMd) loadedFiles.push("AGENTS.md");
+    if (projectContext.claudeMd) loadedFiles.push("CLAUDE.md");
+    if (projectContext.geminiMd) loadedFiles.push("GEMINI.md");
     if (projectContext.readmeMd) loadedFiles.push("README.md");
     if (loadedFiles.length > 0) {
       this.sendToWebview({ type: "projectContextLoaded", files: loadedFiles });
