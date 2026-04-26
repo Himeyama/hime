@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from "react";
-import { Check, Copy, Play, Code as CodeIcon } from "lucide-react";
+import { Check, Copy, Play, Code as CodeIcon, Link } from "lucide-react";
 import hljs from "highlight.js";
 import mermaid from "mermaid";
 import { Button } from "./ui/button";
@@ -86,6 +86,7 @@ function injectStoragePolyfill(html: string): string {
 
 export function CodeBlock({ language, code }: CodeBlockProps) {
   const [copied, setCopied] = useState(false);
+  const [copiedDataUri, setCopiedDataUri] = useState(false);
   const [showPreview, setShowPreview] = useState(false);
   const codeRef = useRef<HTMLElement>(null);
   const isMermaid = language?.toLowerCase() === "mermaid";
@@ -114,6 +115,19 @@ export function CodeBlock({ language, code }: CodeBlockProps) {
     await navigator.clipboard.writeText(code);
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
+  };
+
+  const handleCopyDataUri = async () => {
+    try {
+      // Handle potential unicode characters in btoa by encoding URI component first
+      const base64 = btoa(unescape(encodeURIComponent(code)));
+      const dataUri = `data:text/html;base64,${base64}`;
+      await navigator.clipboard.writeText(dataUri);
+      setCopiedDataUri(true);
+      setTimeout(() => setCopiedDataUri(false), 2000);
+    } catch (e) {
+      console.error("Failed to copy as data URI", e);
+    }
   };
 
   return (
@@ -146,21 +160,44 @@ export function CodeBlock({ language, code }: CodeBlockProps) {
             </div>
           )}
         </div>
-        <Button
-          variant="ghost"
-          size="sm"
-          className={`h-6 px-2 text-[10px] gap-1 ${copied ? "text-success" : "text-muted-foreground"}`}
-          onClick={handleCopy}
-        >
-          {copied ? (
-            <>
-              <Check className="h-3 w-3" />
-              コピー済み
-            </>
-          ) : (
-            <Copy className="h-3 w-3" />
+        <div className="flex items-center gap-1">
+          {isHTML && (
+            <Button
+              variant="ghost"
+              size="sm"
+              className={`h-6 px-2 text-[10px] gap-1 ${copiedDataUri ? "text-success" : "text-muted-foreground"}`}
+              onClick={handleCopyDataUri}
+              title="Copy as Data URI"
+            >
+              {copiedDataUri ? (
+                <>
+                  <Check className="h-3 w-3" />
+                  Data URI コピー済み
+                </>
+              ) : (
+                <>
+                  <Link className="h-3 w-3" />
+                  Data URI
+                </>
+              )}
+            </Button>
           )}
-        </Button>
+          <Button
+            variant="ghost"
+            size="sm"
+            className={`h-6 px-2 text-[10px] gap-1 ${copied ? "text-success" : "text-muted-foreground"}`}
+            onClick={handleCopy}
+          >
+            {copied ? (
+              <>
+                <Check className="h-3 w-3" />
+                コピー済み
+              </>
+            ) : (
+              <Copy className="h-3 w-3" />
+            )}
+          </Button>
+        </div>
       </div>
 
       {isMermaid ? (
