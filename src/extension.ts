@@ -46,6 +46,28 @@ let currentAbortController: AbortController | null = null;
 let outputChannel: vscode.OutputChannel;
 let previewServer: PreviewServer;
 
+class HimeCodeActionProvider implements vscode.CodeActionProvider {
+  public static readonly providedCodeActionKinds = [
+    vscode.CodeActionKind.QuickFix
+  ];
+
+  provideCodeActions(document: vscode.TextDocument, range: vscode.Range | vscode.Selection, context: vscode.CodeActionContext, token: vscode.CancellationToken): vscode.CodeAction[] {
+    const diagnostics = context.diagnostics;
+    if (diagnostics.length === 0) {
+      return [];
+    }
+
+    const action = new vscode.CodeAction('Himeにエラーを修正してもらう (Auto-fix)', vscode.CodeActionKind.QuickFix);
+    action.command = {
+      command: 'hime.fixError',
+      title: 'Himeにエラーを修正してもらう',
+      arguments: [document, range, diagnostics[0]]
+    };
+    
+    return [action];
+  }
+}
+
 export async function activate(context: vscode.ExtensionContext) {
   outputChannel = vscode.window.createOutputChannel("Hime");
   context.subscriptions.push(outputChannel);
@@ -104,6 +126,22 @@ export async function activate(context: vscode.ExtensionContext) {
     }),
     vscode.commands.registerCommand("hime.togglePreviewServer", () => {
       previewServer.toggle();
+    }),
+    vscode.commands.registerCommand("hime.fixError", async (document: vscode.TextDocument, range: vscode.Range, diagnostic: vscode.Diagnostic) => {
+      await vscode.commands.executeCommand("hime.chatView.focus");
+      
+      setTimeout(() => {
+        const errorContext = `File: ${document.uri.fsPath}\nError: ${diagnostic.message}\nCode:\n\`\`\`${document.languageId}\n${document.getText(range)}\n\`\`\``;
+        const prompt = `以下のエラーを修正してください。\n\n${errorContext}`;
+        
+        provider.sendToWebview({ type: "fillInput", content: prompt, submit: true });
+      }, 100);
+    })
+  );
+
+  context.subscriptions.push(
+    vscode.languages.registerCodeActionsProvider('*', new HimeCodeActionProvider(), {
+      providedCodeActionKinds: HimeCodeActionProvider.providedCodeActionKinds
     })
   );
 

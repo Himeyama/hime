@@ -55,6 +55,10 @@
       {
         "command": "hime.togglePreviewServer",
         "title": "Hime: プレビューサーバーの起動/停止"
+      },
+      {
+        "command": "hime.fixError",
+        "title": "Hime: エラーを修正する"
       }
     ],
     "menus": {

@@ -45,6 +45,27 @@ export function InputArea({ onSend, disabled, isStreaming, onAbort }: InputAreaP
   }, []);
 
   useEffect(() => {
+    const handleFillInput = (e: CustomEvent) => {
+      const { content, submit } = e.detail;
+      if (submit) {
+        if (content && !disabled) {
+          onSend(content);
+          setValue("");
+        } else {
+          setValue(content);
+        }
+      } else {
+        setValue(content);
+        if (textareaRef.current) {
+          textareaRef.current.focus();
+        }
+      }
+    };
+    window.addEventListener("hime-fill-input" as any, handleFillInput);
+    return () => window.removeEventListener("hime-fill-input" as any, handleFillInput);
+  }, [onSend, disabled]);
+
+  useEffect(() => {
     adjustHeight();
   }, [value, adjustHeight]);
 return (

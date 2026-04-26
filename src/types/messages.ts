@@ -47,7 +47,8 @@ export type ExtensionToWebviewMessage =
   | { type: "projectContextLoaded"; files: string[] }
   | { type: "skillsList"; content: string }
   | { type: "skillExecuted"; chatId: string; skillName: string; expandedPrompt: string }
-  | { type: "helpContent"; content: string };
+  | { type: "helpContent"; content: string }
+  | { type: "fillInput"; content: string; submit?: boolean };
 
 export interface AppSettings {
   defaultModelId: string;

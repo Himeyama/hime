@@ -123,6 +123,9 @@ export function useChat() {
             setStreamingContent("");
           }
           break;
+        case "fillInput":
+          window.dispatchEvent(new CustomEvent("hime-fill-input", { detail: { content: msg.content, submit: msg.submit } }));
+          break;
       }
     });
   }, [onMessage]);
