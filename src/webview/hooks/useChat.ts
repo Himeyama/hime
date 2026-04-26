@@ -105,8 +105,12 @@ export function useChat() {
               const skillMessage = {
                 id: crypto.randomUUID(),
                 role: "user" as const,
-                content: `/${msg.skillName}\n\n${msg.expandedPrompt}`,
+                content: msg.expandedPrompt,
                 timestamp: new Date().toISOString(),
+                skill: {
+                  name: msg.skillName,
+                  // We don't have the exact args here, but the UI will render it as a skill
+                },
               };
               return { ...prev, messages: [...prev.messages, skillMessage] };
             });

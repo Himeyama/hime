@@ -331,7 +331,8 @@ class HimeChatViewProvider implements vscode.WebviewViewProvider {
     chatId: string,
     content: string,
     modelId: string,
-    attachments?: import("./types/chat").Attachment[]
+    attachments?: import("./types/chat").Attachment[],
+    skill?: import("./types/chat").SkillCall
   ) {
     const settings = await settingsStorage.load();
     const entry = settings.models.find((m) => m.id === modelId);
@@ -348,6 +349,7 @@ class HimeChatViewProvider implements vscode.WebviewViewProvider {
       content,
       timestamp: new Date().toISOString(),
       attachments,
+      skill,
     };
     chat.messages.push(userMessage);
     chat.provider = entry.provider;
@@ -564,7 +566,10 @@ class HimeChatViewProvider implements vscode.WebviewViewProvider {
 
     this.sendToWebview({ type: "skillExecuted", chatId, skillName, expandedPrompt });
 
-    await this.handleSendMessage(chatId, expandedPrompt, modelId);
+    await this.handleSendMessage(chatId, expandedPrompt, modelId, undefined, {
+      name: skillName,
+      arguments: args || undefined,
+    });
   }
 
   private async handleListSkills() {

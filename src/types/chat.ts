@@ -15,6 +15,11 @@ export interface TokenUsage {
   cacheWriteTokens?: number;
 }
 
+export interface SkillCall {
+  name: string;
+  arguments?: string;
+}
+
 export interface Message {
   id: string;
   role: "user" | "assistant" | "system";
@@ -27,6 +32,7 @@ export interface Message {
   reactions?: Reaction[];
   contextClearMark?: boolean;
   usage?: TokenUsage;
+  skill?: SkillCall;
 }
 
 export interface Attachment {

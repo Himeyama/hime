@@ -1,7 +1,7 @@
-import React from "react";
+import React, { useState } from "react";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
-import { Paperclip } from "lucide-react";
+import { Paperclip, ChevronRight, ChevronDown, Wrench } from "lucide-react";
 import { Message, ToolCall } from "../../types/chat";
 import { CodeBlock } from "./CodeBlock";
 import { ToolCallView } from "./ToolCallView";
@@ -18,6 +18,7 @@ interface MessageBubbleProps {
 export function MessageBubble({ message, isStreaming, streamingContent, streamingToolCalls }: MessageBubbleProps) {
   const content = streamingContent || message.content;
   const isUser = message.role === "user";
+  const [isSkillExpanded, setIsSkillExpanded] = useState(false);
 
   if (message.contextClearMark) {
     return null;
@@ -42,7 +43,29 @@ export function MessageBubble({ message, isStreaming, streamingContent, streamin
             : "markdown-body relative group"
         )}>
           {isUser ? (
-            content
+            message.skill ? (
+              <div className="flex flex-col">
+                <div 
+                  className="flex items-center gap-2 cursor-pointer font-medium select-none"
+                  onClick={() => setIsSkillExpanded(!isSkillExpanded)}
+                >
+                  <Wrench className="w-4 h-4 opacity-70" />
+                  <span>Skill: {message.skill.name}</span>
+                  {isSkillExpanded ? (
+                    <ChevronDown className="w-4 h-4 opacity-50" />
+                  ) : (
+                    <ChevronRight className="w-4 h-4 opacity-50" />
+                  )}
+                </div>
+                {isSkillExpanded && (
+                  <div className="mt-2 text-sm opacity-90 border-t border-primary-foreground/20 pt-2 break-all">
+                    {content}
+                  </div>
+                )}
+              </div>
+            ) : (
+              content
+            )
           ) : (
             <>
               <ReactMarkdown
