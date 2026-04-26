@@ -51,6 +51,10 @@
       {
         "command": "hime.sendSelection",
         "title": "Hime: 選択範囲を送信"
+      },
+      {
+        "command": "hime.togglePreviewServer",
+        "title": "Hime: プレビューサーバーの起動/停止"
       }
     ],
     "menus": {

@@ -35,6 +35,7 @@ import { loadAllSkills, findSkill, expandSkillPrompt, buildSkillsHelpText, build
 import { ProviderType, Message, ModelEntry, generateModelDisplayName } from "./types/chat";
 import { AIProvider, ProviderConfig } from "./types/provider";
 import { WebviewToExtensionMessage, ExtensionToWebviewMessage, AppSettings } from "./types/messages";
+import { PreviewServer } from "./server/preview";
 
 let chatStorage: ChatHistoryStorage;
 let settingsStorage: SettingsStorage;
@@ -43,10 +44,14 @@ let toolExecutor: ToolExecutor;
 let activeEditorTracker: ActiveEditorTracker;
 let currentAbortController: AbortController | null = null;
 let outputChannel: vscode.OutputChannel;
+let previewServer: PreviewServer;
 
 export async function activate(context: vscode.ExtensionContext) {
   outputChannel = vscode.window.createOutputChannel("Hime");
   context.subscriptions.push(outputChannel);
+
+  previewServer = new PreviewServer();
+  context.subscriptions.push(previewServer);
 
   chatStorage = new ChatHistoryStorage(outputChannel);
   settingsStorage = new SettingsStorage();
@@ -96,6 +101,9 @@ export async function activate(context: vscode.ExtensionContext) {
           });
         }
       }
+    }),
+    vscode.commands.registerCommand("hime.togglePreviewServer", () => {
+      previewServer.toggle();
     })
   );
 
@@ -319,6 +327,15 @@ class HimeChatViewProvider implements vscode.WebviewViewProvider {
             msg.reactions = reactions;
             await chatStorage.saveChat(chat);
           }
+          break;
+        }
+        case "openInBrowser": {
+          if (!previewServer.isRunning()) {
+            await previewServer.start();
+          }
+          previewServer.setPreviewContent(message.content);
+          const port = previewServer.getPort();
+          vscode.env.openExternal(vscode.Uri.parse(`http://localhost:${port}/hime-preview`));
           break;
         }
       }
@@ -736,7 +753,7 @@ class HimeChatViewProvider implements vscode.WebviewViewProvider {
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <meta http-equiv="Content-Security-Policy" content="default-src 'none'; style-src ${webview.cspSource} 'unsafe-inline' https:; script-src ${webview.cspSource} 'unsafe-inline' 'unsafe-eval' https:; img-src ${webview.cspSource} data: blob: https:; font-src https: data:; connect-src *;">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'none'; style-src ${webview.cspSource} 'unsafe-inline' https: http:; script-src ${webview.cspSource} 'unsafe-inline' 'unsafe-eval' https: http:; img-src ${webview.cspSource} data: blob: https: http:; font-src https: data: http:; connect-src *; frame-src * data: blob: about: 'unsafe-inline' http: https: vscode-webview-resource:; child-src * data: blob: about: 'unsafe-inline' http: https: vscode-webview-resource:;">
   <link rel="stylesheet" href="${styleUri}">
   <title>Hime</title>
 </head>

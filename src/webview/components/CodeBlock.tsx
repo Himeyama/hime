@@ -1,8 +1,9 @@
 import { useState, useEffect, useRef } from "react";
-import { Check, Copy, Play, Code as CodeIcon, Link } from "lucide-react";
+import { Check, Copy, Play, Code as CodeIcon, Link, ExternalLink } from "lucide-react";
 import hljs from "highlight.js";
 import mermaid from "mermaid";
 import { Button } from "./ui/button";
+import { useVSCode } from "../hooks/useVSCode";
 
 interface CodeBlockProps {
   language: string;
@@ -89,6 +90,7 @@ export function CodeBlock({ language, code }: CodeBlockProps) {
   const [copiedDataUri, setCopiedDataUri] = useState(false);
   const [showPreview, setShowPreview] = useState(false);
   const codeRef = useRef<HTMLElement>(null);
+  const { postMessage } = useVSCode();
   const isMermaid = language?.toLowerCase() === "mermaid";
   const isHTML = language?.toLowerCase() === "html";
 
@@ -130,6 +132,10 @@ export function CodeBlock({ language, code }: CodeBlockProps) {
     }
   };
 
+  const handleOpenInBrowser = () => {
+    postMessage({ command: "openInBrowser", content: code });
+  };
+
   return (
     <div className="my-2.5 border border-border rounded-lg overflow-hidden shadow-sm bg-vsc-editor-bg">
       <div className="flex justify-between items-center px-3 py-1.5 bg-muted/40 text-[11px]">
@@ -156,6 +162,16 @@ export function CodeBlock({ language, code }: CodeBlockProps) {
               >
                 <Play className="h-2.5 w-2.5" />
                 Preview
+              </Button>
+              <Button
+                variant="ghost"
+                size="sm"
+                className="h-5 px-1.5 text-[9px] gap-1"
+                onClick={handleOpenInBrowser}
+                title="Open in Browser"
+              >
+                <ExternalLink className="h-2.5 w-2.5" />
+                Browser
               </Button>
             </div>
           )}
@@ -207,7 +223,7 @@ export function CodeBlock({ language, code }: CodeBlockProps) {
       ) : isHTML && showPreview ? (
         <iframe
           srcDoc={injectStoragePolyfill(code)}
-          sandbox="allow-scripts allow-forms allow-modals allow-popups"
+          sandbox="allow-scripts allow-forms allow-modals allow-popups allow-same-origin allow-popups-to-escape-sandbox"
           className="w-full border-0 block"
           style={{ height: "500px" }}
           title="HTML Preview"

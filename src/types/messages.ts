@@ -26,7 +26,8 @@ export type WebviewToExtensionMessage =
   | { command: "getMcpStatus" }
   | { command: "executeSkill"; chatId: string; skillName: string; args: string; modelId: string }
   | { command: "listSkills" }
-  | { command: "listHelp" };
+  | { command: "listHelp" }
+  | { command: "openInBrowser"; content: string };
 
 // Extension → Webview
 export type ExtensionToWebviewMessage =
