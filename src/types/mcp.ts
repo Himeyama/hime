@@ -3,6 +3,7 @@ export interface MCPServerConfig {
   args?: string[];
   env?: Record<string, string>;
   url?: string;
+  disabled?: boolean;
 }
 
 export interface MCPConfig {

@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { Code2, X, Eye, EyeOff, Check, AlertCircle, RefreshCw, Trash2, Plug, ChevronUp, ChevronDown } from "lucide-react";
+import { Code2, X, Eye, EyeOff, Check, AlertCircle, RefreshCw, Trash2, Plug, ChevronUp, ChevronDown, Server } from "lucide-react";
 import { ProviderType, ModelEntry, PROVIDER_DISPLAY_NAMES } from "../../types/chat";
 import { AppSettings } from "../../types/messages";
 import { Button } from "./ui/button";
@@ -102,6 +102,19 @@ export function SettingsPanel({
     } catch (e) {
       setMcpError((e as Error).message);
     }
+  };
+
+  const toggleMcpServer = (name: string, currentConfig: any, enable: boolean) => {
+    const updatedServers = {
+      ...(settings.mcpServers || {}),
+      [name]: {
+        ...currentConfig,
+        disabled: !enable,
+      }
+    };
+    onUpdateSettings({ mcpServers: updatedServers });
+    setMcpJson(JSON.stringify(updatedServers, null, 2));
+    setMcpError(null);
   };
 
   return (
@@ -344,7 +357,7 @@ export function SettingsPanel({
 
         <div className="space-y-1.5">
           <div className="flex justify-between items-center">
-            <Label>MCP Servers (JSON)</Label>
+            <Label>MCP Servers</Label>
             <Button
               variant="outline"
               size="sm"
@@ -357,6 +370,33 @@ export function SettingsPanel({
               再接続
             </Button>
           </div>
+
+          {/* MCPサーバーリスト */}
+          {settings.mcpServers && Object.keys(settings.mcpServers).length > 0 && (
+            <div className="space-y-1 mb-2">
+              {Object.entries(settings.mcpServers).map(([name, config]) => {
+                const isEnabled = !config.disabled;
+                return (
+                  <div key={name} className="flex items-center justify-between py-1.5 px-2 rounded-md bg-muted/40 hover:bg-muted/60 transition-colors">
+                    <div className="flex items-center gap-2 overflow-hidden">
+                      <Server className={cn("h-3.5 w-3.5 shrink-0", isEnabled ? "text-primary" : "text-muted-foreground")} />
+                      <span className={cn("text-xs truncate", isEnabled ? "text-foreground font-medium" : "text-muted-foreground")}>{name}</span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <span className="text-[10px] text-muted-foreground">{isEnabled ? "有効" : "無効"}</span>
+                      <Switch
+                        checked={isEnabled}
+                        onCheckedChange={(checked) => toggleMcpServer(name, config, checked)}
+                        className="scale-75 origin-right"
+                      />
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          )}
+
+          <Label className="text-xs mt-2 block text-muted-foreground">詳細設定 (JSON)</Label>
           <Textarea
             className={cn(
               "min-h-[120px] font-mono text-[11px]",

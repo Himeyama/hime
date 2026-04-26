@@ -22,7 +22,7 @@ export function useSettings() {
     success: boolean;
     error?: string;
   } | null>(null);
-  const [mcpStatus, setMcpStatus] = useState<{ name: string; status: "connected" | "disconnected" | "error"; toolCount: number }[]>([]);
+  const [mcpStatus, setMcpStatus] = useState<{ name: string; status: "connected" | "disconnected" | "error" | "disabled"; toolCount: number }[]>([]);
 
   useEffect(() => {
     postMessage({ command: "getSettings" });

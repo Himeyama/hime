@@ -8,7 +8,7 @@ import * as path from "path";
 
 export class MCPClientManager {
   private connections: Map<string, { client: Client; transport: StdioClientTransport | SSEClientTransport; tools: MCPTool[] }> = new Map();
-  private serverStatuses: Map<string, "connected" | "error"> = new Map();
+  private serverStatuses: Map<string, "connected" | "error" | "disabled"> = new Map();
   private outputChannel?: vscode.OutputChannel;
 
   constructor(outputChannel?: vscode.OutputChannel) {
@@ -60,6 +60,11 @@ export class MCPClientManager {
     }
 
     for (const [name, serverConfig] of Object.entries(servers)) {
+      if (serverConfig.disabled) {
+        this.log(`Skipping MCP server "${name}" because it is disabled.`);
+        this.serverStatuses.set(name, "disabled");
+        continue;
+      }
       try {
         await this.connect(name, serverConfig);
         this.serverStatuses.set(name, "connected");
@@ -133,7 +138,7 @@ export class MCPClientManager {
     this.connections.set(name, { client, transport, tools });
   }
 
-  getServerStatuses(): { name: string; status: "connected" | "error"; toolCount: number }[] {
+  getServerStatuses(): { name: string; status: "connected" | "error" | "disabled"; toolCount: number }[] {
     return Array.from(this.serverStatuses.entries()).map(([name, status]) => ({
       name,
       status,
