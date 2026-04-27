@@ -27,7 +27,10 @@ export type WebviewToExtensionMessage =
   | { command: "executeSkill"; chatId: string; skillName: string; args: string; modelId: string }
   | { command: "listSkills" }
   | { command: "listHelp" }
-  | { command: "openInBrowser"; content: string };
+  | { command: "openInBrowser"; content: string }
+  | { command: "setPreviewContent"; content: string };
+
+
 
 // Extension → Webview
 export type ExtensionToWebviewMessage =
@@ -48,7 +51,8 @@ export type ExtensionToWebviewMessage =
   | { type: "skillsList"; content: string }
   | { type: "skillExecuted"; chatId: string; skillName: string; expandedPrompt: string }
   | { type: "helpContent"; content: string }
-  | { type: "fillInput"; content: string; submit?: boolean };
+  | { type: "fillInput"; content: string; submit?: boolean }
+  | { type: "previewServerReady"; url: string };
 
 export interface AppSettings {
   defaultModelId: string;

@@ -61,13 +61,7 @@ export class PreviewServer {
       }
 
       const workspaceFolders = vscode.workspace.workspaceFolders;
-      if (!workspaceFolders || workspaceFolders.length === 0) {
-        vscode.window.showErrorMessage('No workspace folder open.');
-        resolve();
-        return;
-      }
-
-      const rootPath = workspaceFolders[0].uri.fsPath;
+      const rootPath = workspaceFolders?.[0]?.uri.fsPath ?? null;
 
       this.sockets.clear();
 
@@ -87,6 +81,12 @@ export class PreviewServer {
             'Access-Control-Allow-Origin': '*'
           });
           res.end(this.previewContent);
+          return;
+        }
+
+        if (!rootPath) {
+          res.writeHead(404);
+          res.end('Not Found');
           return;
         }
 

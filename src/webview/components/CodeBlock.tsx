@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import { Check, Copy, Play, Code as CodeIcon, Link, ExternalLink } from "lucide-react";
 import hljs from "highlight.js";
 import mermaid from "mermaid";
@@ -72,25 +72,14 @@ function Mermaid({ code }: { code: string }) {
   );
 }
 
-// sandbox="allow-scripts" without allow-same-origin makes localStorage/sessionStorage
-// throw SecurityError, crashing the entire script before event listeners attach.
-// Inject an in-memory polyfill that silently catches the error.
-const STORAGE_POLYFILL = `<script>(function(){function m(){var s={};return{getItem:function(k){return Object.prototype.hasOwnProperty.call(s,k)?s[k]:null},setItem:function(k,v){s[k]=String(v)},removeItem:function(k){delete s[k]},clear:function(){s={}},key:function(i){return Object.keys(s)[i]||null},get length(){return Object.keys(s).length}}};try{localStorage.getItem('')}catch(e){Object.defineProperty(window,'localStorage',{value:m(),configurable:true})};try{sessionStorage.getItem('')}catch(e){Object.defineProperty(window,'sessionStorage',{value:m(),configurable:true})}})();<\/script>`;
-
-function injectStoragePolyfill(html: string): string {
-  const idx = html.indexOf("</head>");
-  if (idx !== -1) return html.slice(0, idx) + STORAGE_POLYFILL + html.slice(idx);
-  const bodyIdx = html.indexOf("<body");
-  if (bodyIdx !== -1) return html.slice(0, bodyIdx) + STORAGE_POLYFILL + html.slice(bodyIdx);
-  return STORAGE_POLYFILL + html;
-}
 
 export function CodeBlock({ language, code }: CodeBlockProps) {
   const [copied, setCopied] = useState(false);
   const [copiedDataUri, setCopiedDataUri] = useState(false);
   const [showPreview, setShowPreview] = useState(false);
+  const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const codeRef = useRef<HTMLElement>(null);
-  const { postMessage } = useVSCode();
+  const { postMessage, onMessage } = useVSCode();
   const isMermaid = language?.toLowerCase() === "mermaid";
   const isHTML = language?.toLowerCase() === "html";
 
@@ -112,6 +101,24 @@ export function CodeBlock({ language, code }: CodeBlockProps) {
       }
     }
   }, [code, language, isMermaid, isHTML, showPreview]);
+
+  useEffect(() => {
+    return onMessage((msg) => {
+      if (msg.type === "previewServerReady") {
+        setPreviewUrl(msg.url);
+      }
+    });
+  }, [onMessage]);
+
+  const handleShowPreview = useCallback(() => {
+    setShowPreview(true);
+    setPreviewUrl(null);
+    postMessage({ command: "setPreviewContent", content: code });
+  }, [code, postMessage]);
+
+  const handleHidePreview = useCallback(() => {
+    setShowPreview(false);
+  }, []);
 
   const handleCopy = async () => {
     await navigator.clipboard.writeText(code);
@@ -149,7 +156,7 @@ export function CodeBlock({ language, code }: CodeBlockProps) {
                 variant={showPreview ? "ghost" : "secondary"}
                 size="sm"
                 className="h-5 px-1.5 text-[9px] gap-1"
-                onClick={() => setShowPreview(false)}
+                onClick={handleHidePreview}
               >
                 <CodeIcon className="h-2.5 w-2.5" />
                 Code
@@ -158,7 +165,7 @@ export function CodeBlock({ language, code }: CodeBlockProps) {
                 variant={showPreview ? "secondary" : "ghost"}
                 size="sm"
                 className="h-5 px-1.5 text-[9px] gap-1"
-                onClick={() => setShowPreview(true)}
+                onClick={handleShowPreview}
               >
                 <Play className="h-2.5 w-2.5" />
                 Preview
@@ -221,13 +228,19 @@ export function CodeBlock({ language, code }: CodeBlockProps) {
           <Mermaid code={code} />
         </div>
       ) : isHTML && showPreview ? (
-        <iframe
-          srcDoc={injectStoragePolyfill(code)}
-          sandbox="allow-scripts allow-forms allow-modals allow-popups allow-same-origin allow-popups-to-escape-sandbox"
-          className="w-full border-0 block"
-          style={{ height: "500px" }}
-          title="HTML Preview"
-        />
+        previewUrl ? (
+          <iframe
+            src={previewUrl}
+            sandbox="allow-scripts allow-forms allow-modals allow-popups allow-same-origin allow-popups-to-escape-sandbox"
+            className="w-full border-0 block"
+            style={{ height: "500px" }}
+            title="HTML Preview"
+          />
+        ) : (
+          <div className="h-32 flex items-center justify-center text-muted-foreground text-xs">
+            プレビューを読み込んでいます...
+          </div>
+        )
       ) : (
         <pre className="px-3 py-3 overflow-x-auto font-vsc-editor text-[13px] leading-snug m-0 scrollbar-thin bg-transparent">
           <code

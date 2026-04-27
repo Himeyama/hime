@@ -376,6 +376,15 @@ class HimeChatViewProvider implements vscode.WebviewViewProvider {
           vscode.env.openExternal(vscode.Uri.parse(`http://localhost:${port}/hime-preview`));
           break;
         }
+        case "setPreviewContent": {
+          if (!previewServer.isRunning()) {
+            await previewServer.start();
+          }
+          previewServer.setPreviewContent(message.content);
+          const previewPort = previewServer.getPort();
+          this.sendToWebview({ type: "previewServerReady", url: `http://localhost:${previewPort}/hime-preview` });
+          break;
+        }
       }
     } catch (err: any) {
       console.error("Error handling message:", err);
