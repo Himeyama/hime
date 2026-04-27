@@ -259,7 +259,7 @@ export abstract class VercelBaseProvider extends BaseProvider {
       messages: modelMessages,
       ...(vercelTools ? { tools: vercelTools } : {}),
       stopWhen: stepCountIs(10),
-      maxOutputTokens: 8192,
+      maxOutputTokens: 16384,
       abortSignal: signal,
     });
 
