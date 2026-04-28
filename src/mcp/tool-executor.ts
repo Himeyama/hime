@@ -11,6 +11,32 @@ export class ToolExecutor {
     return [...getBuiltinToolDefinitions(), ...this.mcpClient.listTools()];
   }
 
+  getToolTitle(name: string): string | undefined {
+    return this.getToolDefinitions().find((t) => t.name === name)?.title;
+  }
+
+  getDisplayTitle(name: string, args: Record<string, unknown>): string | undefined {
+    const str = (v: unknown) => (v != null ? String(v) : undefined);
+    switch (name) {
+      case "Read":
+      case "Write":
+      case "Edit":
+        return str(args.file_path) ?? this.getToolTitle(name);
+      case "Glob":
+      case "Grep":
+        return str(args.pattern) ?? this.getToolTitle(name);
+      case "WebSearch":
+        return str(args.query) ?? this.getToolTitle(name);
+      case "WebFetch":
+        return str(args.url) ?? this.getToolTitle(name);
+      case "PowerShell":
+      case "Bash":
+        return str(args.description) ?? this.getToolTitle(name);
+      default:
+        return this.getToolTitle(name);
+    }
+  }
+
   async executeToolCall(toolCall: ToolCall): Promise<string> {
     if (BUILTIN_TOOL_NAMES.has(toolCall.name)) {
       const workspacePath = vscode.workspace.workspaceFolders?.[0]?.uri.fsPath || "";

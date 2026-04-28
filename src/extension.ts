@@ -541,6 +541,7 @@ class HimeChatViewProvider implements vscode.WebviewViewProvider {
           const tc: import("./types/chat").ToolCall = {
             id: toolCall.id,
             name: toolCall.name,
+            title: toolExecutor.getDisplayTitle(toolCall.name, toolCall.arguments),
             arguments: toolCall.arguments,
             status: "running",
           };
@@ -551,8 +552,12 @@ class HimeChatViewProvider implements vscode.WebviewViewProvider {
         toolExecutor.getToolsForProvider(entry.provider)
       );
 
+      const titleMap = new Map(assistantMessage.toolCalls?.map((tc) => [tc.id, tc.title]) ?? []);
       assistantMessage.content = finalAssistantMessage.content;
-      assistantMessage.toolCalls = finalAssistantMessage.toolCalls;
+      assistantMessage.toolCalls = finalAssistantMessage.toolCalls?.map((tc) => ({
+        ...tc,
+        title: titleMap.get(tc.id),
+      }));
       assistantMessage.usage = finalAssistantMessage.usage;
 
       if (finalAssistantMessage.usage) {

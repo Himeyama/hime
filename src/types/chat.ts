@@ -47,6 +47,7 @@ export interface Attachment {
 export interface ToolCall {
   id: string;
   name: string;
+  title?: string;
   arguments: Record<string, unknown>;
   status: "pending" | "running" | "completed" | "error";
   result?: string;

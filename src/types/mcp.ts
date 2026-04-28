@@ -12,6 +12,7 @@ export interface MCPConfig {
 
 export interface MCPTool {
   name: string;
+  title?: string;
   description?: string;
   inputSchema: Record<string, unknown>;
 }

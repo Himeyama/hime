@@ -130,6 +130,7 @@ export class MCPClientManager {
     const toolsResult = await client.listTools();
     const tools: MCPTool[] = toolsResult.tools.map((t) => ({
       name: t.name,
+      title: t.annotations?.title,
       description: t.description,
       inputSchema: t.inputSchema as Record<string, unknown>,
     }));

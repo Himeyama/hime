@@ -33,16 +33,21 @@ export function ToolCallView({ toolCall }: ToolCallViewProps) {
   return (
     <div className="my-3 animate-fade-in border-l-2 border-border/30 pl-3">
       <div className="flex flex-col gap-1 mb-1.5">
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 min-w-0">
           <StatusDot status={toolCall.status} />
-          <span className="text-[11px] font-vsc font-bold text-muted-foreground uppercase tracking-wider select-none">
+          <span className="text-[11px] font-vsc font-bold text-muted-foreground uppercase tracking-wider select-none shrink-0">
             {toolCall.name}
           </span>
+          {toolCall.title && (
+            <span className="text-[11px] font-vsc text-muted-foreground/60 truncate min-w-0">
+              {toolCall.title}
+            </span>
+          )}
           {hasArgs && isLongArgs && (
             <Button
               variant="link"
               size="sm"
-              className="h-auto p-0 text-[10px] text-primary ml-auto"
+              className="h-auto p-0 text-[10px] text-primary ml-auto shrink-0"
               onClick={() => setIsExpanded(!isExpanded)}
             >
               {isExpanded ? "閉じる" : "引数を表示"}

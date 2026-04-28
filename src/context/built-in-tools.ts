@@ -39,6 +39,7 @@ export function getBuiltinToolDefinitions(): MCPTool[] {
   const tools: MCPTool[] = [
     {
       name: "Read",
+      title: "ファイル読み込み",
       description: `Reads the content of a file from the local filesystem.
 
 Key Features & Constraints:
@@ -71,6 +72,7 @@ Key Features & Constraints:
     },
     {
       name: "Write",
+      title: "ファイル書き込み",
       description: `Creates a new file or overwrites an existing one at the specified path.
 
 Key Features & Constraints:
@@ -94,6 +96,7 @@ Key Features & Constraints:
     },
     {
       name: "Edit",
+      title: "ファイル編集",
       description: `Performs string replacement within a file.
 
 Key Features & Constraints:
@@ -126,6 +129,7 @@ Key Features & Constraints:
     },
     {
       name: "Glob",
+      title: "ファイル検索",
       description: `Finds files matching a glob pattern.
 
 Key Features & Constraints:
@@ -149,6 +153,7 @@ Key Features & Constraints:
     },
     {
       name: "Grep",
+      title: "テキスト検索",
       description: `Searches for a regex pattern within file contents.
 
 Key Features & Constraints:
@@ -216,6 +221,7 @@ Key Features & Constraints:
     IS_WINDOWS
       ? {
           name: "PowerShell",
+          title: "PowerShell 実行",
           description: `Executes a PowerShell 7 (pwsh) command.
 
 Key Features & Constraints:
@@ -245,6 +251,7 @@ Key Features & Constraints:
         }
       : {
           name: "Bash",
+          title: "Bash 実行",
           description: `Executes a Bash command.
 
 Key Features & Constraints:
@@ -274,6 +281,7 @@ Key Features & Constraints:
         },
     {
       name: "WebFetch",
+      title: "Web ページ取得",
       description: `Fetches content from a URL and converts HTML to plain text.
 
 Key Features & Constraints:
@@ -298,6 +306,7 @@ Key Features & Constraints:
     },
     {
       name: "WebSearch",
+      title: "Web 検索",
       description: `Searches the web using DuckDuckGo and returns a list of results with titles, URLs, and snippets.
 
 Key Features & Constraints:
