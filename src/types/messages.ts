@@ -46,7 +46,7 @@ export type ExtensionToWebviewMessage =
   | { type: "connectionTestResult"; modelId: string; success: boolean; error?: string }
   | { type: "activeEditorChanged"; filePath: string; language: string }
   | { type: "mcpTools"; tools: import("./mcp").MCPTool[] }
-  | { type: "mcpStatus"; servers: { name: string; status: "connected" | "disconnected" | "error" | "disabled"; toolCount: number }[] }
+  | { type: "mcpStatus"; servers: { name: string; status: "connected" | "error" | "disabled"; toolCount: number }[] }
   | { type: "projectContextLoaded"; files: string[] }
   | { type: "skillsList"; content: string }
   | { type: "skillExecuted"; chatId: string; skillName: string; expandedPrompt: string }

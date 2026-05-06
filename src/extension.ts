@@ -805,7 +805,7 @@ class HimeChatViewProvider implements vscode.WebviewViewProvider {
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <meta http-equiv="Content-Security-Policy" content="default-src 'none'; style-src ${webview.cspSource} 'unsafe-inline' https: http:; script-src ${webview.cspSource} 'unsafe-inline' 'unsafe-eval' https: http:; img-src ${webview.cspSource} data: blob: https: http:; font-src https: data: http:; connect-src *; frame-src * data: blob: about: 'unsafe-inline' http: https: vscode-webview-resource:; child-src * data: blob: about: 'unsafe-inline' http: https: vscode-webview-resource:;">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'none'; style-src ${webview.cspSource} 'unsafe-inline' https: http:; script-src ${webview.cspSource} 'unsafe-inline' https: http:; img-src ${webview.cspSource} data: blob: https: http:; font-src https: data: http:; connect-src *; frame-src * data: blob: about: 'unsafe-inline' http: https: vscode-webview-resource:; child-src * data: blob: about: 'unsafe-inline' http: https: vscode-webview-resource:;">
   <link rel="stylesheet" href="${styleUri}">
   <title>Hime</title>
 </head>

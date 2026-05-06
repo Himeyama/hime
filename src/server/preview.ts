@@ -75,10 +75,12 @@ export class PreviewServer {
         const url = new URL(req.url, `http://localhost:${this.port}`);
         let urlPath = url.pathname;
 
+        const corsOrigin = `http://localhost:${this.port}`;
+
         if (urlPath === '/hime-preview') {
           res.writeHead(200, {
             'Content-Type': 'text/html; charset=utf-8',
-            'Access-Control-Allow-Origin': '*'
+            'Access-Control-Allow-Origin': corsOrigin
           });
           res.end(this.previewContent);
           return;
@@ -97,6 +99,14 @@ export class PreviewServer {
         let filePath = path.join(rootPath, urlPath);
 
         try {
+          const resolvedRoot = path.resolve(rootPath);
+          const resolvedFile = path.resolve(filePath);
+          if (!resolvedFile.startsWith(resolvedRoot + path.sep) && resolvedFile !== resolvedRoot) {
+            res.writeHead(403);
+            res.end('Forbidden');
+            return;
+          }
+
           if (fs.existsSync(filePath)) {
             const stat = fs.statSync(filePath);
             if (stat.isDirectory()) {
@@ -115,7 +125,7 @@ export class PreviewServer {
 
           res.writeHead(200, {
             'Content-Type': contentType,
-            'Access-Control-Allow-Origin': '*'
+            'Access-Control-Allow-Origin': corsOrigin
           });
           const readStream = fs.createReadStream(filePath);
           readStream.pipe(res);
@@ -135,9 +145,9 @@ export class PreviewServer {
 
       this.server.on('error', (e: any) => {
         if (e.code === 'EADDRINUSE') {
-          vscode.window.showErrorMessage(`Port ${this.port} is already in use.`);
+          vscode.window.showErrorMessage(`ポート ${this.port} は既に使用されています。`);
         } else {
-          vscode.window.showErrorMessage(`Preview server error: ${e.message}`);
+          vscode.window.showErrorMessage(`プレビューサーバーエラー: ${e.message}`);
         }
         this.server = null;
         this.updateStatusBar();
@@ -145,7 +155,7 @@ export class PreviewServer {
       });
 
       this.server.listen(this.port, () => {
-        vscode.window.showInformationMessage(`Preview server started on http://localhost:${this.port}`);
+        vscode.window.showInformationMessage(`プレビューサーバーが http://localhost:${this.port} で起動しました。`);
         this.updateStatusBar();
         resolve();
       });
@@ -161,7 +171,7 @@ export class PreviewServer {
       
       this.server.close(() => {
         this.server = null;
-        vscode.window.showInformationMessage('Preview server stopped.');
+        vscode.window.showInformationMessage('プレビューサーバーを停止しました。');
         this.updateStatusBar();
       });
     }

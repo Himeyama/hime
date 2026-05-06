@@ -34,7 +34,7 @@ export class MCPClientManager {
   }
 
   async connectAll(workspacePath: string, mcpServers?: Record<string, MCPServerConfig>): Promise<void> {
-    this.log("Connecting to all MCP servers...");
+    this.log("全MCPサーバーに接続中...");
     await this.disconnectAll();
     this.serverStatuses.clear();
 
@@ -48,20 +48,20 @@ export class MCPClientManager {
     }
 
     if (!servers) {
-      this.log("No MCP servers configured.");
+      this.log("MCPサーバーが設定されていません。");
       return;
     }
 
     // Handle cases where the config might be nested under "mcpServers"
     // (e.g. when someone copy-pastes a full mcp.json into settings)
     if (servers.mcpServers && typeof servers.mcpServers === "object" && !servers.mcpServers.command && !servers.mcpServers.url) {
-      this.log("Detected nested 'mcpServers' configuration, unwrapping...");
+      this.log("'mcpServers' のネスト設定を検出しました。展開します...");
       servers = servers.mcpServers as Record<string, MCPServerConfig>;
     }
 
     for (const [name, serverConfig] of Object.entries(servers)) {
       if (serverConfig.disabled) {
-        this.log(`Skipping MCP server "${name}" because it is disabled.`);
+        this.log(`MCPサーバー "${name}" は無効化されているためスキップします。`);
         this.serverStatuses.set(name, "disabled");
         continue;
       }
@@ -69,7 +69,7 @@ export class MCPClientManager {
         await this.connect(name, serverConfig);
         this.serverStatuses.set(name, "connected");
       } catch (err: any) {
-        this.log(`Failed to connect to MCP server "${name}": ${err.message || err}`);
+        this.log(`MCPサーバー "${name}" への接続に失敗しました: ${err.message || err}`);
         this.serverStatuses.set(name, "error");
       }
     }
@@ -80,7 +80,7 @@ export class MCPClientManager {
 
     if (serverConfig.url) {
       const sseUrl = new URL(serverConfig.url);
-      this.log(`Connecting to "${name}" via SSE: ${sseUrl.toString()}`);
+      this.log(`"${name}" にSSEで接続中: ${sseUrl.toString()}`);
       
       const headers = {
         "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
@@ -98,7 +98,7 @@ export class MCPClientManager {
       });
     } else if (serverConfig.command) {
       const args = serverConfig.args || [];
-      this.log(`Connecting to "${name}" via stdio: ${serverConfig.command} ${args.join(" ")}`);
+      this.log(`"${name}" にstdioで接続中: ${serverConfig.command} ${args.join(" ")}`);
       const isWindows = process.platform === "win32";
       const command = isWindows && serverConfig.command === "npx" ? "npx.cmd" : serverConfig.command;
 
@@ -111,7 +111,7 @@ export class MCPClientManager {
         },
       });
     } else {
-      throw new Error(`Invalid MCP server configuration for "${name}": neither "command" nor "url" provided.`);
+      throw new Error(`MCPサーバー "${name}" の設定が無効です: "command" または "url" が指定されていません。`);
     }
 
     const client = new Client({ name: "hime", version: "0.1.0" }, { capabilities: {} });
@@ -119,9 +119,9 @@ export class MCPClientManager {
     try {
       await client.connect(transport);
     } catch (err: any) {
-      this.log(`Connection error for "${name}": ${err.message || err}`);
+      this.log(`"${name}" の接続エラー: ${err.message || err}`);
       if (err.stack) {
-        this.log(`Stack trace: ${err.stack}`);
+        this.log(`スタックトレース: ${err.stack}`);
       }
       throw err;
     }
@@ -135,7 +135,7 @@ export class MCPClientManager {
       inputSchema: t.inputSchema as Record<string, unknown>,
     }));
 
-    this.log(`Connected to "${name}" with ${tools.length} tools.`);
+    this.log(`"${name}" に接続しました (ツール数: ${tools.length})`);
     this.connections.set(name, { client, transport, tools });
   }
 

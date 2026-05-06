@@ -59,9 +59,11 @@ export class ChatHistoryStorage {
   }
 
   async loadChat(id: string): Promise<Chat> {
-    const filePath = path.join(CHATS_DIR, `${id}.json`);
-    const data = await fs.readFile(filePath, "utf-8");
-    return JSON.parse(data) as Chat;
+    return this.enqueue(async () => {
+      const filePath = path.join(CHATS_DIR, `${id}.json`);
+      const data = await fs.readFile(filePath, "utf-8");
+      return JSON.parse(data) as Chat;
+    });
   }
 
   async saveChat(chat: Chat): Promise<void> {
