@@ -79,6 +79,7 @@ export class ToolExecutor {
         return this.toAnthropicTools();
       case "openai":
       case "azure-openai":
+      case "azure-openai-custom":
       case "openrouter":
       case "ollama":
       case "google":
