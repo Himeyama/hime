@@ -1,8 +1,9 @@
 import { generateText } from "ai";
 import { createAnthropic } from "@ai-sdk/anthropic";
-import type { LanguageModel } from "ai";
+import type { LanguageModel, SystemModelMessage } from "ai";
 import { VercelBaseProvider } from "./vercel-base";
 import type { ProviderType } from "../types/chat";
+import type { SystemPrompt } from "../types/provider";
 
 export class AnthropicProvider extends VercelBaseProvider {
   readonly type: ProviderType = "anthropic";
@@ -13,6 +14,23 @@ export class AnthropicProvider extends VercelBaseProvider {
       apiKey: this.config.apiKey,
       ...(this.config.endpoint ? { baseURL: this.config.endpoint } : {}),
     })(this.config.model);
+  }
+
+  protected override buildSystemParam(systemPrompt: SystemPrompt): string | SystemModelMessage[] {
+    if (typeof systemPrompt === "string") {
+      return systemPrompt;
+    }
+    return [
+      {
+        role: "system" as const,
+        content: systemPrompt.staticPart,
+        providerOptions: { anthropic: { cacheControl: { type: "ephemeral" } } },
+      },
+      {
+        role: "system" as const,
+        content: systemPrompt.dynamicPart,
+      },
+    ];
   }
 
   async listModels(): Promise<string[]> {

@@ -1,5 +1,5 @@
 import { streamText, tool, jsonSchema, stepCountIs } from "ai";
-import type { LanguageModel, ModelMessage } from "ai";
+import type { LanguageModel, ModelMessage, SystemModelMessage } from "ai";
 import { BaseProvider } from "./base";
 import type { SystemPrompt } from "../types/provider";
 import type { Message, ToolCall } from "../types/chat";
@@ -10,6 +10,10 @@ export abstract class VercelBaseProvider extends BaseProvider {
   // Set true in providers where the SDK's internal multi-step generates incompatible
   // message types (e.g. item_reference for Ollama's OpenAI-compatible endpoint).
   protected readonly useManualToolLoop: boolean = false;
+
+  protected buildSystemParam(systemPrompt: SystemPrompt): string | SystemModelMessage[] {
+    return this.resolveSystemPrompt(systemPrompt);
+  }
 
   protected himeToModelMessages(messages: Message[]): ModelMessage[] {
     const result: ModelMessage[] = [];
@@ -143,7 +147,7 @@ export abstract class VercelBaseProvider extends BaseProvider {
     tools?: any[]
   ): Promise<Message> {
     const model = this.createModel();
-    const resolvedSystem = this.resolveSystemPrompt(systemPrompt);
+    const systemParam = this.buildSystemParam(systemPrompt);
     let currentMessages: any[] = this.himeToModelMessages(messages);
     const allToolCalls: ToolCall[] = [];
     let fullContent = "";
@@ -159,7 +163,7 @@ export abstract class VercelBaseProvider extends BaseProvider {
 
       const result = streamText({
         model,
-        system: resolvedSystem,
+        system: systemParam,
         messages: currentMessages,
         ...(vercelToolDefs && onToolCall ? { tools: vercelToolDefs } : {}),
         maxOutputTokens: 16384,
@@ -247,7 +251,7 @@ export abstract class VercelBaseProvider extends BaseProvider {
     }
 
     const model = this.createModel();
-    const resolvedSystem = this.resolveSystemPrompt(systemPrompt);
+    const systemParam = this.buildSystemParam(systemPrompt);
     const modelMessages = this.himeToModelMessages(messages);
     const allToolCalls: ToolCall[] = [];
     const vercelTools = this.buildVercelTools(tools, onToolCall, onToolCallStart, allToolCalls);
@@ -255,7 +259,7 @@ export abstract class VercelBaseProvider extends BaseProvider {
 
     const result = streamText({
       model,
-      system: resolvedSystem,
+      system: systemParam,
       messages: modelMessages,
       ...(vercelTools ? { tools: vercelTools } : {}),
       stopWhen: stepCountIs(10),
